@@ -522,6 +522,8 @@ function setSyncStatus(s){
 }
 
 function save(){
+  // Stamp with current time
+  DB.lastModified = Date.now();
   // Save to localStorage as backup
   try{localStorage.setItem('archidesk_data',JSON.stringify(DB));}catch(e){}
   // Debounce cloud save
@@ -545,7 +547,7 @@ async function saveToCloud(){
 
 async function loadFromCloud(){
   setSyncStatus('saving');
-  // First load localStorage as immediate fallback
+  // Load localStorage first
   let localDB = null;
   try{
     const raw=localStorage.getItem('archidesk_data');
@@ -556,14 +558,18 @@ async function loadFromCloud(){
     const resp=await fetch(SCRIPT_URL+'?action=load');
     const json=await resp.json();
     if(json.ok&&json.data&&json.data.expedientes){
-      // Use whichever has more expedientes (most up to date)
-      if(localDB && localDB.expedientes && 
-         localDB.expedientes.length >= json.data.expedientes.length){
+      const cloudDB = json.data;
+      const localTime = localDB?.lastModified||0;
+      const cloudTime = cloudDB?.lastModified||0;
+      // Use whichever was modified most recently
+      if(localDB && localTime >= cloudTime){
         DB=localDB;
-        // Sync local to cloud since it's more up to date
-        saveToCloud();
+        // Local is newer - sync to cloud
+        if(localTime > cloudTime) saveToCloud();
       } else {
-        DB=json.data;
+        DB=cloudDB;
+        // Also update localStorage
+        try{localStorage.setItem('archidesk_data',JSON.stringify(DB));}catch(e){}
       }
       setSyncStatus('ok');
       return true;
@@ -1937,6 +1943,7 @@ function borrarExpediente(id){
   selId = null;
   document.getElementById('det-container').innerHTML='';
   // Guardar inmediatamente en local Y en la nube sin debounce
+  DB.lastModified = Date.now();
   try{localStorage.setItem('archidesk_data',JSON.stringify(DB));}catch(e){}
   saveToCloud();
   render();
@@ -1986,4 +1993,17 @@ setInterval(saveToCloud,5*60*1000); // auto-save every 5 min
   </div>
   <div class="fg">
     <label>Importes fijos por tipo de proyecto</label>
-    <div id="nc-fijos-body" style="max
+    <div id="nc-fijos-body" style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px"></div>
+  </div>
+  <div class="fg">
+    <label>Notas del contrato</label>
+    <input id="nc-notas" placeholder="Ej: Subida de tarifas acordada en reunión de mayo">
+  </div>
+  <div class="modal-actions">
+    <button class="btn-cancel" onclick="document.getElementById('overlay-nuevo-contrato').classList.remove('on')">Cancelar</button>
+    <button class="btn-save" onclick="guardarNuevoContrato()">Guardar contrato</button>
+  </div>
+</div>
+</div>
+</body>
+</html>
