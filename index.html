@@ -1,0 +1,1988 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>estudio.desk — Gestión de Expedientes</title>
+<link href="https://fonts.googleapis.com/css2?family=Century+Gothic:wght@400;700&display=swap" rel="stylesheet">
+<style>
+@font-face { font-family:'CenturyGothicFallback'; src:local('Century Gothic'),local('CenturyGothic'),local('AppleGothic'); }
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  /* Paleta corporativa SRGex — rojo sobrio + grises cálidos */
+  --accent:#9B1B1B;--accent-light:#F5E8E8;--accent-dark:#6B1212;--accent-mid:#B52B2B;
+  --warn:#B85C00;--warn-light:#FEF0E6;--blue:#1E4FD8;--blue-light:#EEF2FD;
+  --amber:#8A5F00;--amber-light:#FDF4E0;--red:#7A1C1C;--red-light:#FDECEA;
+  --purple:#5B3DBF;--purple-light:#F0EEFE;
+  --bg:#F7F5F3;--bg3:#EEEAE6;--surface:#FFFFFF;--border:#DDD8D2;--border2:#C4BDB6;
+  --text:#1A1714;--text2:#5C534C;--text3:#9C9189;
+  --font:'Century Gothic','CenturyGothicFallback','Trebuchet MS','Gill Sans',sans-serif;
+  --radius:10px;--radius-lg:14px;
+  --shadow:0 1px 3px rgba(0,0,0,.07),0 4px 12px rgba(0,0,0,.04);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.14),0 2px 8px rgba(0,0,0,.07);
+}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px}
+.shell{display:flex;height:100vh;overflow:hidden}
+
+/* SIDEBAR */
+.sb{width:215px;min-width:215px;background:#6B6560;border-right:none;display:flex;flex-direction:column;box-shadow:2px 0 8px rgba(0,0,0,.10)}
+.sb-brand{padding:16px 14px 14px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;background:#111}
+.brand-icon{width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.brand-icon svg{fill:#fff}
+.brand-name{font-size:15px;font-weight:700;color:var(--text)}
+.brand-name span{color:var(--accent);font-weight:400}
+.sb-nav{padding:10px 8px;flex:1;overflow-y:auto}
+.sb-sec{font-size:10px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.1em;text-transform:uppercase;padding:12px 10px 4px}
+.ni{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:8px;cursor:pointer;font-size:13px;color:rgba(255,255,255,.8);transition:all .12s;margin-bottom:2px;user-select:none}
+.ni:hover{background:rgba(255,255,255,.12);color:#fff}
+.ni.on{background:var(--accent);color:#fff;font-weight:700}
+.ni svg{flex-shrink:0;opacity:.6}
+.ni.on svg{opacity:1;stroke:#fff}
+.ni-badge{margin-left:auto;font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px;background:rgba(255,255,255,.15);color:rgba(255,255,255,.8)}
+.ni-badge.g{background:rgba(155,27,27,.3);color:#F5A5A5}
+.sb-bottom{padding:14px 10px;border-top:1px solid rgba(255,255,255,.15)}
+.new-btn{width:100%;padding:10px;border-radius:8px;background:var(--accent);color:#fff;font-size:13px;font-weight:700;font-family:var(--font);border:none;cursor:pointer;transition:background .12s}
+.new-btn:hover{background:var(--accent-dark)}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 22px;height:56px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;box-shadow:0 1px 6px rgba(0,0,0,.06)}
+.tb-title{font-size:20px;font-weight:700;color:var(--text);letter-spacing:.04em;text-transform:uppercase}
+.tb-sub{font-size:11px;color:var(--text3);margin-top:1px;display:none}
+.tb-right{display:flex;align-items:center;gap:10px}
+.tb-search{padding:7px 13px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;font-family:var(--font);width:200px;outline:none;transition:border-color .12s}
+.tb-search:focus{border-color:var(--accent)}
+.tb-search::placeholder{color:var(--text3)}
+.filter-sel{padding:7px 11px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text2);font-size:12px;font-family:var(--font);outline:none;cursor:pointer}
+.content{flex:1;overflow-y:auto;padding:20px 22px}
+.view{display:none}.view.on{display:block}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.sc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;position:relative;overflow:hidden;box-shadow:var(--shadow)}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.sc.green::before{background:var(--accent)}.sc.amber::before{background:#C87D2A}
+.sc.blue::before{background:#2B5FBF}.sc.warn::before{background:#8A5F00}
+.sc-val{font-size:28px;font-weight:700;color:var(--text);letter-spacing:-.04em;line-height:1}
+.sc-label{font-size:12px;color:var(--text2);margin-top:5px}
+.sc-sub{font-size:11px;color:var(--text3);margin-top:2px}
+
+/* TABLE */
+.tbl-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow)}
+.tbl-header{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--bg)}
+.tbl-title{font-size:13px;font-weight:700;color:var(--text)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{padding:9px 14px;text-align:left;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--border);background:var(--bg);white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--bg3)}
+tbody tr.sel{background:var(--accent-light)}
+td{padding:11px 14px;color:var(--text);vertical-align:middle}
+.ref-cell{font-family:'Courier New',monospace;font-size:11px;font-weight:700;padding:2px 7px;border-radius:5px;display:inline-block}
+.tipo-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;display:inline-block;background:var(--bg3);color:var(--text2)}
+.worker-pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:3px 9px;border-radius:20px;background:var(--bg3);color:var(--text2)}
+.worker-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.dias-chip{font-family:'Courier New',monospace;font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px;display:inline-block}
+.dias-fresh{background:#E8F4EF;color:#1A6B4A}
+.dias-mid{background:#FDF4E0;color:#8A6000}
+.dias-old{background:#FDECEA;color:#8A2A2A}
+.fase-track{display:flex;gap:4px;align-items:center}
+.fase-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.fd-done{background:#1A6B4A}.fd-active{background:#C87D2A;box-shadow:0 0 0 3px #FDF0E0}.fd-none{background:var(--border2)}
+
+/* DETAIL */
+.detail{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);margin-top:16px;overflow:hidden;box-shadow:var(--shadow)}
+.det-head{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;background:var(--bg)}
+.det-ref{font-size:11px;color:var(--accent);font-weight:700;font-family:'Courier New',monospace}
+.det-title{font-size:18px;font-weight:700;color:var(--text);letter-spacing:-.02em;margin-top:3px}
+.det-meta{font-size:12px;color:var(--text2);margin-top:4px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.det-tabs{display:flex;border-bottom:1px solid var(--border);background:var(--surface)}
+.det-tab{padding:12px 20px;font-size:13px;font-weight:700;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .12s;user-select:none}
+.det-tab:hover{color:var(--text)}
+.det-tab.on{color:var(--accent);border-bottom-color:var(--accent)}
+.det-body{padding:20px 22px}
+.det-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:22px}
+.det-card{background:var(--bg);border-radius:var(--radius);padding:14px 16px;border:1px solid var(--border)}
+.det-card-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px}
+.det-card-val{font-size:14px;font-weight:700;color:var(--text)}
+.det-card-sub{font-size:11px;color:var(--text3);margin-top:3px}
+.timer-val{font-family:'Courier New',monospace;font-size:24px;font-weight:700;letter-spacing:-.02em}
+.timer-green{color:#1A6B4A}.timer-amber{color:var(--amber)}.timer-red{color:var(--red)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.sec-title{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px}
+.separator{height:1px;background:var(--border);margin:18px 0}
+
+/* TIMELINE */
+.timeline{display:flex;flex-direction:column}
+.tl-item{display:flex;align-items:stretch}
+.tl-left{display:flex;flex-direction:column;align-items:center;width:28px;flex-shrink:0}
+.tl-circle{width:14px;height:14px;border-radius:50%;flex-shrink:0;margin-top:13px;z-index:1;border:2px solid transparent}
+.tl-circle.done{background:#1A6B4A;border-color:#1A6B4A}
+.tl-circle.active{background:#fff;border-color:#C87D2A;box-shadow:0 0 0 3px #FDF0E0}
+.tl-circle.pending{background:var(--border2);border-color:var(--border2)}
+.tl-line{width:2px;flex:1;margin:0 auto;background:var(--border)}
+.tl-line.done{background:#1A6B4A;opacity:.35}
+.tl-item:last-child .tl-line{display:none}
+.tl-content{flex:1;padding:9px 0 16px 12px}
+.tl-fase-name{font-size:13px;font-weight:700;color:var(--text)}
+.tl-fase-name.done{color:var(--accent)}.tl-fase-name.pending{color:var(--text3);font-weight:400}
+.tl-fase-meta{font-size:11px;color:var(--text2);margin-top:3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tl-worker{font-size:11px;padding:1px 7px;border-radius:4px;background:var(--bg3);color:var(--text2)}
+.tl-fecha{font-family:'Courier New',monospace;font-size:10px;color:var(--text3)}
+.tl-dias{font-family:'Courier New',monospace;font-size:11px;font-weight:700}
+.active-badge{font-size:9px;background:#FDF0E0;color:#8A5F00;padding:1px 6px;border-radius:4px;font-weight:700;text-transform:uppercase}
+.fase-unica-box{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:20px;text-align:center;color:var(--text3)}
+.fase-unica-box .mark-btn{margin-top:12px;padding:8px 20px;border-radius:8px;background:var(--accent);color:#fff;font-size:13px;font-weight:700;font-family:var(--font);border:none;cursor:pointer}
+.fase-unica-done{background:var(--accent-light);border:1px solid var(--accent);border-radius:var(--radius);padding:16px 20px;display:flex;align-items:center;justify-content:space-between}
+
+/* ECONOMIC */
+.eco-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+.eco-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
+.eco-card-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}
+.eco-card-val{font-size:20px;font-weight:700}
+.eco-green{color:var(--accent)}.eco-amber{color:var(--amber)}.eco-red{color:var(--red)}
+.reparto-table{width:100%;border-collapse:collapse;font-size:12px}
+.reparto-table th{text-align:left;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;padding:7px 10px;border-bottom:1px solid var(--border);background:var(--bg)}
+.reparto-table td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+.reparto-table tr:last-child td{border-bottom:none}
+.collab-sel{padding:5px 9px;border-radius:6px;border:1px solid var(--border);background:var(--surface);font-size:12px;font-family:var(--font);color:var(--text);outline:none;cursor:pointer;width:100%}
+.collab-sel:focus{border-color:var(--accent)}
+.mia-badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--accent-light);color:var(--accent)}
+.total-row td{font-weight:700;background:var(--bg);border-top:2px solid var(--border)}
+.resumen-collab{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.rc-card{border-radius:var(--radius);padding:14px 16px;border:1px solid var(--border)}
+
+/* WORKERS VIEW */
+.workers-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:20px}
+.wcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;cursor:pointer;transition:all .12s;box-shadow:var(--shadow)}
+.wcard:hover{border-color:var(--border2);transform:translateY(-1px);box-shadow:var(--shadow-lg)}
+.wcard.sel{border-color:var(--accent);border-width:2px;background:var(--accent-light)}
+.wcard.collab-card{border-style:dashed}
+.wcard-av{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;margin-bottom:12px}
+.wcard-name{font-size:15px;font-weight:700;color:var(--text)}
+.wcard-role{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+.wcard-count{font-size:12px;color:var(--text2);margin-top:4px}
+.wcard-dias{font-family:'Courier New',monospace;font-size:11px;font-weight:700;margin-top:8px}
+.collab-ficha{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px;margin-top:16px;box-shadow:var(--shadow)}
+.ficha-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.condiciones-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.cond-section{background:var(--bg);border-radius:var(--radius);padding:16px}
+.cond-label{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px}
+.cond-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)}
+.cond-row:last-child{border-bottom:none}
+.cond-name{font-size:12px;color:var(--text2)}
+.cond-input{width:90px;padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface);font-size:12px;font-family:var(--font);text-align:right;outline:none}
+.cond-input:focus{border-color:var(--accent)}
+.cond-unit{font-size:11px;color:var(--text3);margin-left:4px;white-space:nowrap}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(20,18,14,.55);backdrop-filter:blur(3px);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
+.overlay.on{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius-lg);padding:28px 30px;width:560px;max-width:100%;border:1px solid var(--border);box-shadow:var(--shadow-lg);max-height:90vh;overflow-y:auto;animation:modalIn .18s ease}
+.modal-sm{width:420px}
+@keyframes modalIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+.modal-title{font-size:20px;font-weight:700;color:var(--text);letter-spacing:-.02em;margin-bottom:22px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.modal-title span{color:var(--accent)}
+.fg{margin-bottom:14px}
+.fg label{display:block;font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}
+.fg-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+input,select,textarea{width:100%;padding:9px 13px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;font-family:var(--font);outline:none;transition:border-color .12s,box-shadow .12s}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(26,107,74,.12)}
+input::placeholder,textarea::placeholder{color:var(--text3)}
+textarea{resize:vertical;min-height:70px}
+.ref-preview{padding:9px 13px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);font-family:'Courier New',monospace;font-size:12px;font-weight:700;color:var(--accent);min-height:38px;display:flex;align-items:center;letter-spacing:.02em}
+.fases-checks{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:6px}
+.fc-item{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:8px;border:1px solid var(--border);cursor:pointer;transition:all .12s;font-size:12px;color:var(--text2);user-select:none;background:var(--bg)}
+.fc-item:hover{border-color:var(--accent-mid);background:var(--accent-light)}
+.fc-item.on{background:var(--accent-light);border-color:var(--accent);color:var(--accent);font-weight:700}
+.fc-check{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;background:#fff;transition:all .12s}
+.fc-item.on .fc-check{background:var(--accent);border-color:var(--accent)}
+.fc-item.on .fc-check::after{content:'';display:block;width:5px;height:9px;border:2px solid #fff;border-top:none;border-left:none;transform:rotate(45deg) translate(-1px,-1px)}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:18px;border-top:1px solid var(--border)}
+.btn-cancel{padding:10px 20px;border-radius:8px;border:1px solid var(--border2);background:var(--surface);color:var(--text2);font-size:13px;font-family:var(--font);font-weight:700;cursor:pointer;transition:all .12s}
+.btn-cancel:hover{background:var(--bg3)}
+.btn-save{padding:10px 22px;border-radius:8px;background:var(--accent);color:#fff;font-size:13px;font-weight:700;font-family:var(--font);border:none;cursor:pointer;transition:background .12s}
+.btn-save:hover{background:var(--accent-dark)}
+.btn-sec{padding:10px 18px;border-radius:8px;background:var(--blue-light);color:var(--blue);font-size:13px;font-weight:700;font-family:var(--font);border:none;cursor:pointer}
+.info-box{background:var(--amber-light);border:1px solid var(--amber);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--amber);margin-bottom:14px}
+.empty{padding:40px;text-align:center;color:var(--text3);font-size:13px}
+.close-btn{padding:7px 14px;border-radius:8px;border:1px solid var(--border2);background:var(--surface);color:var(--text2);font-size:12px;font-family:var(--font);cursor:pointer;transition:all .12s;white-space:nowrap}
+.close-btn:hover{background:var(--bg3);color:var(--text)}
+.avanzar-btn{padding:7px 14px;border-radius:8px;background:var(--accent);color:#fff;font-size:12px;font-weight:700;font-family:var(--font);border:none;cursor:pointer;transition:background .12s}
+.avanzar-btn:hover{background:var(--accent-dark)}
+.completado-badge{font-size:12px;font-weight:700;color:var(--accent);padding:7px 14px;background:var(--accent-light);border-radius:8px}
+</style>
+</head>
+<body>
+<div class="shell">
+  <!-- SIDEBAR -->
+  <div class="sb">
+    <div class="sb-brand" style="padding:12px 14px">
+      <img src="data:image/png;base64,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" alt="SRG Consultores" style="width:100%;max-width:155px;height:auto;display:block;border-radius:8px;padding:0">
+    </div>
+    <div class="sb-nav">
+      <div class="sb-sec">Vistas</div>
+      <div class="ni on" onclick="nav('expedientes',this)">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="2" width="12" height="12" rx="1.5"/><path d="M5 6h6M5 9h4" stroke-linecap="round"/></svg>
+        Expedientes <span class="ni-badge g" id="badge-exp">0</span>
+      </div>
+      <div class="ni" onclick="nav('dashboard',this)">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="1" width="6" height="6" rx="1.2"/><rect x="9" y="1" width="6" height="6" rx="1.2"/><rect x="1" y="9" width="6" height="6" rx="1.2"/><rect x="9" y="9" width="6" height="6" rx="1.2"/></svg>
+        Resumen
+      </div>
+      <div class="ni" onclick="nav('colaboradores',this)">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="6" cy="5" r="2.5"/><path d="M1 14c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke-linecap="round"/><path d="M12 7.5c1.38 0 2.5 1.12 2.5 2.5" stroke-linecap="round"/><circle cx="13" cy="4.5" r="1.5"/></svg>
+        Colaboradores <span class="ni-badge" id="badge-col">0</span>
+      </div>
+      <div class="sb-sec">Estado</div>
+      <div class="ni" onclick="nav('progreso',this)">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.5"/><path d="M8 5v3.5l2 2" stroke-linecap="round"/></svg>
+        En progreso <span class="ni-badge" id="badge-prog">0</span>
+      </div>
+    </div>
+    <div style="padding:8px">
+      <div class="ni" onclick="nav('configuracion',this)">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke-linecap="round"/></svg>
+        Configuración
+      </div>
+    </div>
+    <div class="sb-bottom">
+      <button class="new-btn" onclick="openModal('exp')">+ Nuevo expediente</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="tb-title" id="tb-title">Expedientes</div>
+        <div class="tb-sub" id="tb-sub">Todos los proyectos del estudio</div>
+      </div>
+      <div class="tb-right">
+        <span id="sync-status" style="font-size:11px;color:var(--accent)">✓ Guardado en la nube</span>
+        <input class="tb-search" placeholder="Buscar..." oninput="buscar(this.value)">
+        <select class="filter-sel" onchange="filtrarTipo(this.value)" id="filtro-tipo">
+          <option value="">Todos los tipos</option>
+        </select>
+      </div>
+    </div>
+    <div class="content">
+
+      <!-- EXPEDIENTES -->
+      <div class="view on" id="view-expedientes">
+        <div class="tbl-wrap">
+          <div class="tbl-header">
+            <div class="tbl-title" id="count-label">0 expedientes</div>
+            <div style="font-size:11px;color:var(--text3)" id="last-update"></div>
+          </div>
+          <table>
+            <thead><tr><th>Referencia</th><th>Trabajo</th><th>Tipo</th><th>Trabajador</th><th>Adjudicación</th><th>Días adjud.</th><th>Fase actual</th><th>Días en fase</th><th>Progreso</th></tr></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+        <div id="det-container"></div>
+      </div>
+
+      <!-- DASHBOARD -->
+      <div class="view" id="view-dashboard">
+        <div class="stats" id="stats"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div class="tbl-wrap">
+            <div class="tbl-header"><div class="tbl-title">Más tiempo desde adjudicación</div></div>
+            <table><thead><tr><th>Expediente</th><th>Trabajador</th><th>Días</th></tr></thead><tbody id="top-dias"></tbody></table>
+          </div>
+          <div class="tbl-wrap">
+            <div class="tbl-header"><div class="tbl-title">Carga por trabajador</div></div>
+            <table><thead><tr><th>Trabajador</th><th>Proyectos</th><th>Promedio días</th></tr></thead><tbody id="carga-trabajadores"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- COLABORADORES -->
+      <div class="view" id="view-colaboradores">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div class="tbl-title">Trabajadores y colaboradores</div>
+          <button class="btn-save" onclick="openModal('collab')">+ Nuevo colaborador</button>
+        </div>
+        <div class="workers-grid" id="workers-grid"></div>
+        <div id="collab-detail"></div>
+      </div>
+
+      <!-- CONFIGURACIÓN -->
+      <div class="view" id="view-configuracion">
+        <div class="tbl-wrap" style="max-width:500px">
+          <div class="tbl-header"><div class="tbl-title">Copia de seguridad y datos</div></div>
+          <div style="padding:20px;display:flex;flex-direction:column;gap:12px">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">Exportar datos</div>
+              <div style="font-size:12px;color:var(--text2);margin-bottom:10px">Descarga un archivo JSON con todos los expedientes y colaboradores. Úsalo como copia de seguridad o para trasladar los datos a otro ordenador.</div>
+              <button onclick="exportarDatos()" class="btn-save">⬇ Exportar copia de seguridad</button>
+            </div>
+            <div class="separator"></div>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">Importar datos</div>
+              <div style="font-size:12px;color:var(--text2);margin-bottom:10px">Carga un archivo de copia de seguridad. <strong>Atención:</strong> los datos actuales se reemplazarán por los del archivo.</div>
+              <label class="btn-save" style="display:inline-block;cursor:pointer">⬆ Importar copia de seguridad<input type="file" accept=".json" onchange="importarDatos(this)" style="display:none"></label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROGRESO -->
+      <div class="view" id="view-progreso">
+        <div class="tbl-wrap">
+          <div class="tbl-header"><div class="tbl-title">Expedientes activos con fases pendientes</div></div>
+          <table><thead><tr><th>Ref.</th><th>Trabajo</th><th>Trabajador</th><th>Días adjud.</th><th>Fase actual</th><th>Días en fase</th></tr></thead>
+          <tbody id="tbody-prog"></tbody></table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NUEVO EXPEDIENTE -->
+<div class="overlay" id="overlay-exp" onclick="overlayClick(event,'overlay-exp')">
+<div class="modal">
+  <div class="modal-title" id="modal-exp-title">Nuevo <span>expediente</span></div>
+  <div class="fg">
+    <label>Tipo de trabajo</label>
+    <select id="f-tipo" onchange="onTipoChange()">
+      <option value="">— Selecciona tipo —</option>
+    </select>
+  </div>
+
+  <div class="fg">
+    <label>Referencia del expediente</label>
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <div onclick="setRefMode('auto')" id="ref-mode-auto" style="flex:1;padding:8px 12px;border-radius:8px;border:2px solid var(--accent);background:var(--accent-light);cursor:pointer;font-size:12px;font-weight:700;color:var(--accent);text-align:center;transition:all .12s">
+        🔄 Automática
+      </div>
+      <div onclick="setRefMode('manual')" id="ref-mode-manual" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;font-size:12px;font-weight:700;color:var(--text3);text-align:center;transition:all .12s">
+        ✏️ Manual
+      </div>
+    </div>
+    <div id="ref-auto-preview" style="display:block">
+      <div class="ref-preview" id="ref-preview">— se generará automáticamente —</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">Año_Número_Tipo_NombreCliente</div>
+    </div>
+    <div id="ref-manual-input" style="display:none">
+      <input id="f-ref-manual" placeholder="Ej: 2025_032_ONU_CarlosRayoGarcia" oninput="previewManualRef()">
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">Escribe la referencia exacta tal como la tienes en tus carpetas</div>
+    </div>
+  </div>
+  <div class="fg">
+    <label>Cliente (nombre completo)</label>
+    <input id="f-cliente" placeholder="Nombre completo del cliente" oninput="actualizarRef()">
+    <div style="font-size:11px;color:var(--text3);margin-top:4px">Sin tildes ni espacios: CarlosLopezMartinez</div>
+  </div>
+  <div class="fg"><label>Nombre del trabajo</label><input id="f-trabajo" placeholder="Descripción breve del trabajo"></div>
+  <div class="fg"><label>Trabajador responsable</label><select id="f-worker"></select></div>
+  <div class="fg-row">
+    <div class="fg"><label>Fecha contacto</label><input type="date" id="f-contacto"></div>
+    <div class="fg"><label>Fecha presupuesto</label><input type="date" id="f-presu"></div>
+  </div>
+  <div class="fg"><label>Fecha adjudicación</label><input type="date" id="f-adjud"></div>
+  <div class="fg" id="fg-fases-completadas">
+    <label>Fases completadas — indica fecha real de cada una</label>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:8px">Marca las fases ya completadas. La fecha es opcional — si no la sabes, déjala en blanco.</div>
+    <div id="fases-checks-modal"></div>
+  </div>
+  <div class="fg-row">
+    <div class="fg"><label>Honorarios pactados (€) — sin IVA</label><input type="number" id="f-honorarios" placeholder="0" oninput="actualizarEco()"></div>
+    <div class="fg"><label>Coste visado (€) — sin IVA</label><input type="number" id="f-visado-coste" placeholder="0" oninput="actualizarEco()"></div>
+  </div>
+  <div class="fg" id="fg-eco-preview" style="display:none">
+    <div class="det-card">
+      <div class="det-card-label">Resto a repartir</div>
+      <div class="det-card-val eco-green" id="eco-preview-val">—</div>
+      <div class="det-card-sub">Honorarios − visado</div>
+    </div>
+  </div>
+  <input type="hidden" id="f-edit-id" value="">
+  <div class="fg"><label>Notas</label><textarea id="f-notas" placeholder="Observaciones..."></textarea></div>
+  <div class="modal-actions">
+    <button class="btn-cancel" onclick="closeModal('exp')">Cancelar</button>
+    <button class="btn-save" id="btn-guardar-exp" onclick="guardarExp()">Crear expediente</button>
+  </div>
+</div>
+</div>
+
+<!-- MODAL NUEVO COLABORADOR -->
+<div class="overlay" id="overlay-collab" onclick="overlayClick(event,'overlay-collab')">
+<div class="modal modal-sm">
+  <div class="modal-title">Nuevo <span>colaborador</span></div>
+  <div class="fg"><label>Nombre</label><input id="c-nombre" placeholder="Ej: Fran"></div>
+  <div class="fg"><label>Rol</label>
+    <select id="c-rol">
+      <option value="colaborador">Colaborador externo</option>
+      <option value="trabajador">Trabajador del estudio</option>
+    </select>
+  </div>
+  <div class="info-box">💡 Después de crearlo podrás definir sus honorarios fijos por tipo de proyecto y porcentajes por fase.</div>
+  <div class="modal-actions">
+    <button class="btn-cancel" onclick="closeModal('collab')">Cancelar</button>
+    <button class="btn-save" onclick="guardarCollab()">Crear</button>
+  </div>
+</div>
+</div>
+
+<!-- MODAL AVANCE DE FASE -->
+<div class="overlay" id="overlay-fase" onclick="overlayClick(event,'overlay-fase')">
+<div class="modal modal-sm">
+  <div class="modal-title">Completar <span>fase</span></div>
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+    <span style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;background:var(--accent-light);color:var(--accent)" id="fm-desde">—</span>
+    <span style="font-size:16px;color:var(--text3)">→</span>
+    <span style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;background:var(--amber-light);color:var(--amber)" id="fm-hasta">—</span>
+  </div>
+  <div class="fg">
+    <label>Fecha de finalización</label>
+    <input type="date" id="fm-fecha">
+    <div style="font-size:11px;color:var(--text3);margin-top:4px">Por defecto hoy — puedes cambiarla</div>
+  </div>
+  <div class="modal-actions">
+    <button class="btn-cancel" onclick="closeModal('fase')">Cancelar</button>
+    <button class="btn-save" onclick="confirmarFase()">Confirmar</button>
+  </div>
+</div>
+</div>
+
+<script>
+//
+// CONFIGURACIÓN DE FASES POR TIPO
+//
+const TIPOS_CONFIG = {
+  ONU:{desc:'Obra nueva',fases:['LEVANTAMIENTO','PROPUESTA','PLANOS','MEDICIONES','MEMORIA','VISADO','ENTREGA']},
+  REF:{desc:'Reforma',fases:['LEVANTAMIENTO','PROPUESTA','PLANOS','MEDICIONES','MEMORIA','VISADO','ENTREGA']},
+  REH:{desc:'Rehabilitación',fases:['LEVANTAMIENTO','PROPUESTA','PLANOS','MEDICIONES','MEMORIA','VISADO','ENTREGA']},
+  NAV:{desc:'Nave',fases:['LEVANTAMIENTO','PROPUESTA','PLANOS','MEDICIONES','MEMORIA','VISADO','ENTREGA']},
+  MAC:{desc:'Memoria de actividad',fases:['LEVANTAMIENTO','PROPUESTA','PLANOS','MEDICIONES','MEMORIA','VISADO','ENTREGA']},
+  CUB:{desc:'Cubierta',fases:['LEVANTAMIENTO','PROPUESTA','PLANOS','MEDICIONES','MEMORIA','VISADO','ENTREGA']},
+  CUV:{desc:'Cubierta visada',fases:['LEVANTAMIENTO','PROPUESTA','PLANOS','MEDICIONES','MEMORIA','VISADO','ENTREGA']},
+  LEG:{desc:'Legalización',fases:['LEVANTAMIENTO','PROPUESTA','PLANOS','MEDICIONES','MEMORIA','VISADO','ENTREGA']},
+  DEM:{desc:'Demolición',fases:['LEVANTAMIENTO','PROPUESTA','PLANOS','MEDICIONES','MEMORIA','VISADO','ENTREGA']},
+  CAT:{desc:'Catastro',fases:['LEVANTAMIENTO','PLANOS','MEMORIA','ENTREGA','REGISTRO']},
+  SEG:{desc:'Segregación',fases:['LEVANTAMIENTO','PLANOS','MEMORIA','ENTREGA','REGISTRO']},
+  DIV:{desc:'División',fases:['LEVANTAMIENTO','PLANOS','MEMORIA','ENTREGA','REGISTRO']},
+  TAS:{desc:'Tasación',fases:null},
+  INF:{desc:'Informes',fases:['LEVANTAMIENTO','PLANOS']},
+  PLA:{desc:'Planos',fases:['LEVANTAMIENTO','PLANOS']},
+  PSS:{desc:'Plan de seguridad y salud',fases:null},
+  LEV:{desc:'Levantamiento',fases:null},
+  MED:{desc:'Mediciones',fases:null},
+  DEO:{desc:'Dirección ejecución obra (aparejador)',fases:null},
+  DOB:{desc:'Dirección de obras (Arquitecto)',fases:null},
+  CSS:{desc:'Coordinación Seguridad y Salud',fases:null},
+  CHA:{desc:'Cédulas habitabilidad',fases:null},
+  ESC:{desc:'Escaneado',fases:null},
+  CEI:{desc:'Certificado inmueble',fases:null},
+  SOL:{desc:'Solicitud',fases:null},
+  VAL:{desc:'Valoraciones recursos hacienda',fases:null},
+  SUB:{desc:'Subvención',fases:null},
+  CFO:{desc:'Certificado final de obra',fases:null},
+  OME:{desc:'Tramitación obras menores',fases:null},
+  LDE:{desc:'Libro del edificio',fases:null},
+  CEE:{desc:'Certificado energético',fases:null},
+  PLN:{desc:'Planeamiento urbanismo',fases:null},
+};
+
+// Porcentajes fijos por fase (sobre el resto = honorarios - visado)
+const PORCENTAJES_FASE = {
+  Captacion:      0.25,
+  Responsabilidad:0.25,
+  LEVANTAMIENTO:  0.025,
+  PROPUESTA:      0.10,
+  PLANOS:         0.20,
+  MEDICIONES:     0.05,
+  MEMORIA:        0.125,
+  // VISADO, ENTREGA y REGISTRO no son fases de trabajo, no reparten honorarios
+};
+
+// Fases que NO reparten honorarios (solo son hitos)
+const FASES_SIN_HONORARIOS = ['VISADO','ENTREGA','REGISTRO'];
+
+// Tipos con tarifa plana (colaborador cobra importe fijo, resto a Santiago)
+const TIPOS_TARIFA_PLANA = ['CUB','CUV','NAV','MAC'];
+
+//
+// DATOS INICIALES
+//
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyx0_rUFIeRdZJksndRQ9WPERalQ9RgmlutjwAaaCgaMAw6S3gJsptNo_XNEMYRrYI/exec';
+let _saveTimeout = null;
+let _syncStatus = 'ok'; // ok | saving | error
+
+function setSyncStatus(s){
+  _syncStatus=s;
+  const el=document.getElementById('sync-status');
+  if(!el)return;
+  if(s==='saving'){el.textContent='💾 Guardando...';el.style.color='var(--amber)';}
+  else if(s==='ok'){el.textContent='✓ Guardado en la nube';el.style.color='var(--accent)';}
+  else{el.textContent='⚠️ Error al guardar';el.style.color='var(--red)';}
+}
+
+function save(){
+  // Save to localStorage as backup
+  try{localStorage.setItem('archidesk_data',JSON.stringify(DB));}catch(e){}
+  // Debounce cloud save
+  if(_saveTimeout)clearTimeout(_saveTimeout);
+  _saveTimeout=setTimeout(saveToCloud,1000);
+}
+
+async function saveToCloud(){
+  setSyncStatus('saving');
+  try{
+    const resp=await fetch(SCRIPT_URL,{
+      method:'POST',
+      body:JSON.stringify({action:'save',data:DB})
+    });
+    const json=await resp.json();
+    setSyncStatus(json.ok?'ok':'error');
+  }catch(e){
+    setSyncStatus('error');
+  }
+}
+
+async function loadFromCloud(){
+  setSyncStatus('saving');
+  try{
+    const resp=await fetch(SCRIPT_URL+'?action=load');
+    const json=await resp.json();
+    if(json.ok&&json.data&&json.data.expedientes){
+      DB=json.data;
+      setSyncStatus('ok');
+      return true;
+    }
+  }catch(e){}
+  // Fallback to localStorage
+  try{
+    const raw=localStorage.getItem('archidesk_data');
+    if(raw){DB=JSON.parse(raw);setSyncStatus('ok');return true;}
+  }catch(e){}
+  setSyncStatus('ok');
+  return false;
+}
+
+function loadData(){
+  try{
+    const raw=localStorage.getItem('archidesk_data');
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return {
+    expedientes:[
+      {id:1,ref:'2026_001_ONU_SantiagoRayoGarcia',tipo:'ONU',cliente:'Santiago Rayo García',trabajo:'Vivienda unifamiliar',
+       trabajador:'Santiago',fechaContacto:'2026-01-12',fechaPresupuesto:'2026-01-13',fechaAdjudicacion:'2026-01-14',
+       honorarios:6000,visadoCoste:450.5,notas:'',fechaEntrega:'',
+       faseUnica:false,fechaFaseUnica:'',
+       fases:{LEVANTAMIENTO:{done:true,fecha:'2026-01-28',trabajador:'Santiago'},PROPUESTA:{done:false,fecha:'',trabajador:''},PLANOS:{done:false,fecha:'',trabajador:''},MEDICIONES:{done:false,fecha:'',trabajador:''},MEMORIA:{done:false,fecha:'',trabajador:''},VISADO:{done:false,fecha:'',trabajador:''},ENTREGA:{done:false,fecha:'',trabajador:''}},
+       reparto:{Captacion:'Santiago',Responsabilidad:'Santiago',LEVANTAMIENTO:'Santiago',PROPUESTA:'Fran',PLANOS:'Fran',MEDICIONES:'Fran',MEMORIA:'Fran'}}
+    ],
+    colaboradores:[
+      {id:1,nombre:'Santiago',rol:'titular',color:['#e6f4ee','#1a6b4a'],
+       fijos:{NAV:350,MAC:120,CUB:250,CUV:300},
+       porcentajeExtra:0},
+      {id:2,nombre:'Fran',rol:'colaborador',color:['#eef2fd','#1e4fd8'],
+       contratos:[{
+         id:1, fechaDesde:'2026-01-01', fechaHasta:null, activo:true,
+         fijos:{NAV:350,MAC:120,CUB:250,CUV:300},
+         porcentajes:{}, porcentajeExtra:200,
+         notas:'Contrato inicial'
+       }]}
+    ]
+  };
+}
+
+let DB = loadData();
+function save(){ try{localStorage.setItem('archidesk_data',JSON.stringify(DB));}catch(e){} }
+
+let selId=null,selCollab=null,curView='expedientes',searchQ='',tipoQ='';
+let _faseExpId=null,_faseFase=null;
+
+//
+// HELPERS
+//
+const today=()=>new Date();
+function todayISO(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function parseFecha(s){if(!s)return null;const d=new Date(s);return isNaN(d.getTime())?null:d;}
+function diasDesde(s){const d=parseFecha(s);if(!d)return null;return Math.floor((today()-d)/864e5);}
+function fmtF(s){if(!s)return '—';const d=parseFecha(s);if(!d)return '—';return d.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'2-digit'});}
+function dc(d){if(d===null)return '';return d<=15?'dias-fresh':d<=45?'dias-mid':'dias-old';}
+function fmtEuro(v){
+  const n=parseFloat(v||0);
+  return n.toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2,useGrouping:true})+'€';
+}
+function wc(nombre){const c=DB.colaboradores.find(x=>x.nombre===nombre);return c?c.color:['#eeece7','#5a5852'];}
+
+function fasesDeExp(e){return TIPOS_CONFIG[e.tipo]?.fases||null;}
+function faseActual(e){
+  const fs=fasesDeExp(e); if(!fs)return null;
+  for(let i=fs.length-1;i>=0;i--){if(e.fases[fs[i]]?.done)return i+1<fs.length?fs[i+1]:null;}
+  return fs[0];
+}
+function faseFechaRef(e){
+  const fs=fasesDeExp(e); if(!fs)return e.fechaAdjudicacion;
+  // Find last completed fase WITH a date
+  for(let i=fs.length-1;i>=0;i--){
+    if(e.fases[fs[i]]?.done&&e.fases[fs[i]].fecha) return e.fases[fs[i]].fecha;
+  }
+  // No dates on completed fases — use adjudicacion
+  return e.fechaAdjudicacion;
+}
+function faseTrack(e){
+  const fs=fasesDeExp(e); if(!fs)return '<span style="font-size:11px;color:var(--text3)">Fase única</span>';
+  const fa=faseActual(e);
+  return fs.map(f=>{const done=e.fases[f]?.done;const cls=done?'fd-done':fa===f?'fd-active':'fd-none';return `<div class="fase-dot ${cls}" title="${f}"></div>`;}).join('');
+}
+
+function quitarTildes(s){return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\u00f1/g,'n').replace(/\u00d1/g,'N');}
+function formatearCliente(nombre){
+  if(!nombre||!nombre.trim())return '';
+  return quitarTildes(nombre.trim().replace(/\s+/g,' ')).split(' ').filter(p=>p.length>0).map(p=>p.charAt(0).toUpperCase()+p.slice(1)).join('');
+}
+function siguienteNumero(){
+  const year=new Date().getFullYear();
+  const nums=DB.expedientes.filter(e=>e.ref.startsWith(year+'_')).map(e=>parseInt(e.ref.split('_')[1])||0);
+  return String(nums.length?Math.max(...nums)+1:1).padStart(3,'0');
+}
+
+//
+// RENDER PRINCIPAL
+//
+function render(){
+  updateBadges();
+  if(curView==='expedientes')renderExpedientes();
+  if(curView==='dashboard')renderDashboard();
+  if(curView==='colaboradores')renderColaboradores();
+  if(curView==='progreso')renderProgreso();
+}
+
+function updateBadges(){
+  document.getElementById('badge-exp').textContent=DB.expedientes.length;
+  document.getElementById('badge-col').textContent=DB.colaboradores.filter(c=>c.rol!=='titular').length;
+  document.getElementById('badge-prog').textContent=DB.expedientes.filter(e=>{
+    const fs=fasesDeExp(e);
+    if(!fs) return !e.fechaFaseUnica;
+    return faseActual(e)!==null;
+  }).length;
+}
+
+function filtered(){
+  return DB.expedientes.filter(e=>{
+    const s=searchQ.toLowerCase();
+    return(!s||(e.ref+e.trabajo+e.trabajador+(e.cliente||'')).toLowerCase().includes(s))&&(!tipoQ||e.tipo===tipoQ);
+  }).sort((a,b)=>{
+    // Sort by year first, then by expedition number
+    const partsA=a.ref.split('_'); const partsB=b.ref.split('_');
+    const yearA=parseInt(partsA[0])||0; const yearB=parseInt(partsB[0])||0;
+    if(yearA!==yearB) return yearB-yearA; // most recent year first
+    const numA=parseInt(partsA[1])||0; const numB=parseInt(partsB[1])||0;
+    return numA-numB; // ascending by number
+  });
+}
+
+// -- EXPEDIENTES --
+function renderExpedientes(){
+  const list=filtered();
+  document.getElementById('count-label').textContent=list.length+' expediente'+(list.length!==1?'s':'');
+  document.getElementById('last-update').textContent='Hoy: '+today().toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('tbody').innerHTML=list.map(e=>{
+    const dAdj=diasDesde(e.fechaAdjudicacion);
+    const fs=fasesDeExp(e);
+    const fa=fs?faseActual(e)||'Completado':'Fase única';
+    const dFase=fs?diasDesde(faseFechaRef(e)):diasDesde(e.fechaAdjudicacion);
+    const [bg,fc]=wc(e.trabajador);
+    return `<tr onclick="selExp(${e.id})" class="${selId===e.id?'sel':''}">
+      <td><span class="ref-cell" style="background:${tipoColor(e.tipo).bg};color:${tipoColor(e.tipo).text};border:1px solid ${tipoColor(e.tipo).border}">${e.ref}</span></td>
+      <td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.trabajo}</td>
+      <td><span class="tipo-badge" style="background:${tipoColor(e.tipo).bg};color:${tipoColor(e.tipo).text};border:1px solid ${tipoColor(e.tipo).border}">${e.tipo}</span></td>
+      <td><span class="worker-pill"><span class="worker-dot" style="background:${fc}"></span>${e.trabajador||'—'}</span></td>
+      <td style="font-size:11px;color:var(--text2)">${fmtF(e.fechaAdjudicacion)}</td>
+      <td>${dAdj!==null?`<span class="dias-chip ${dc(dAdj)}">${dAdj}d</span>`:'—'}</td>
+      <td style="font-size:12px;font-weight:700;color:var(--text2)">${fa}</td>
+      <td>${dFase!==null?`<span class="dias-chip ${dc(dFase)}">${dFase}d</span>`:'—'}</td>
+      <td><div class="fase-track">${faseTrack(e)}</div></td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="9" class="empty">No hay expedientes</td></tr>';
+  if(selId)renderDetail();
+}
+
+function selExp(id){
+  if(selId===id){selId=null;document.getElementById('det-container').innerHTML='';renderExpedientes();return;}
+  selId=id;renderExpedientes();renderDetail();
+}
+
+function renderDetail(){
+  try{
+  const e=DB.expedientes.find(x=>x.id===selId);if(!e)return;
+  const [bg,fc]=wc(e.trabajador);
+  const dAdj=diasDesde(e.fechaAdjudicacion);
+  const dCont=diasDesde(e.fechaContacto);
+  const fs=fasesDeExp(e);
+  const fa=fs?faseActual(e):null;
+  const dFase=fs?diasDesde(faseFechaRef(e)):null;
+  const tc=dAdj===null?'':dAdj<=15?'timer-green':dAdj<=45?'timer-amber':'timer-red';
+  const tfc=dFase===null?'':dFase<=15?'timer-green':dFase<=45?'timer-amber':'timer-red';
+
+  const accionBtn=fs
+    ?(fa?`<button class="avanzar-btn" onclick="openFaseModal(${e.id},'${fa}')">→ Avanzar fase</button>`:`<span class="completado-badge">✓ Completado</span>`)
+    :(e.fechaFaseUnica?`<span class="completado-badge">✓ Entregado ${fmtF(e.fechaFaseUnica)}</span>`:`<button class="avanzar-btn" onclick="marcarFaseUnica(${e.id})">✓ Marcar como entregado</button>`);
+
+  document.getElementById('det-container').innerHTML=`
+  <div class="detail">
+    <div class="det-head">
+      <div>
+        <div class="det-ref" style="background:${tipoColor(e.tipo).bg};color:${tipoColor(e.tipo).text};border:1px solid ${tipoColor(e.tipo).border};display:inline-block;padding:3px 10px;border-radius:6px;margin-bottom:4px">${e.ref} · ${e.tipo} · ${TIPOS_CONFIG[e.tipo]?.desc||''}</div>
+        <div class="det-title">${e.trabajo}</div>
+        <div class="det-meta">
+          <span class="worker-pill"><span class="worker-dot" style="background:${fc}"></span>${e.trabajador||'Sin asignar'}</span>
+          ${e.cliente?`<span style="font-weight:700">Cliente: ${e.cliente}</span>`:''}
+          ${e.honorarios?`<span style="color:var(--accent);font-weight:700">${fmtEuro(e.honorarios)} + IVA = ${fmtEuro(e.honorarios*1.21)}</span>`:''}
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
+        ${accionBtn}
+        <button onclick="editarExpediente(${e.id})" style="padding:7px 14px;border-radius:8px;border:1px solid var(--border2);background:var(--surface);color:var(--text2);font-size:12px;font-weight:700;font-family:var(--font);cursor:pointer;transition:all .12s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='var(--surface)'">✏️ Editar</button>
+        <button class="close-btn" onclick="selExp(${e.id})">✕ Cerrar</button>
+        <button onclick="borrarExpediente(${e.id})" style="padding:7px 14px;border-radius:8px;border:1px solid #E8A8A8;background:#FEF0F0;color:#8A2A2A;font-size:12px;font-weight:700;font-family:var(--font);cursor:pointer;transition:all .12s" onmouseover="this.style.background='#FDECEA'" onmouseout="this.style.background='#FEF0F0'">🗑 Borrar</button>
+      </div>
+    </div>
+    <div class="det-tabs">
+      <div class="det-tab on" onclick="detTab(this,'det-plazos')">📅 Plazos</div>
+      <div class="det-tab" onclick="detTab(this,'det-fases')">📋 Fases</div>
+      <div class="det-tab" onclick="detTab(this,'det-eco')">💰 Económico</div>
+    </div>
+    <div id="det-plazos" class="det-body">
+      <div class="det-grid">
+        <div class="det-card"><div class="det-card-label">Días desde adjudicación</div><div class="timer-val ${tc}">${dAdj!==null?dAdj+'d':'—'}</div><div class="det-card-sub">Adjudicado: ${fmtF(e.fechaAdjudicacion)}</div></div>
+        <div class="det-card"><div class="det-card-label">${fs?'Días en fase actual':'Días desde adjudicación'}</div><div class="timer-val ${tfc}">${dFase!==null?dFase+'d':'—'}</div><div class="det-card-sub">${fs?'Fase: '+(fa||'Completado'):'Fase única'}</div></div>
+        <div class="det-card"><div class="det-card-label">Desde contacto inicial</div><div class="timer-val" style="color:var(--text)">${dCont!==null?dCont+'d':'—'}</div><div class="det-card-sub">Contacto: ${fmtF(e.fechaContacto)}</div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;font-size:12px">
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">Contacto</span><strong>${fmtF(e.fechaContacto)}</strong></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">Presupuesto</span><strong>${fmtF(e.fechaPresupuesto)}</strong></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">Adjudicación</span><strong style="color:var(--accent)">${fmtF(e.fechaAdjudicacion)}</strong></div>
+      </div>
+    </div>
+    <div id="det-fases" class="det-body" style="display:none">${renderFasesTab(e)}</div>
+    <div id="det-eco" class="det-body" style="display:none">${renderEcoTab(e)}</div>
+  </div>`;
+  }catch(err){
+    console.error('renderDetail error:',err);
+    document.getElementById('det-container').innerHTML=`<div class="detail"><div style="padding:20px;color:var(--red)">Error al cargar el detalle: ${err.message}</div></div>`;
+  }
+}
+
+function detTab(el,tabId){
+  document.querySelectorAll('.det-tab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  ['det-plazos','det-fases','det-eco'].forEach(id=>{
+    const el2=document.getElementById(id);if(el2)el2.style.display='none';
+  });
+  const t=document.getElementById(tabId);if(t)t.style.display='block';
+}
+
+function renderFasesTab(e){
+  const fs=fasesDeExp(e);
+  if(!fs){
+    if(e.fechaFaseUnica){
+      const dTotal=diasDesde(e.fechaAdjudicacion);
+      const dEntrega=diasDesde(e.fechaFaseUnica);
+      return `
+        <div style="display:flex;gap:10px;margin-bottom:16px">
+          <div class="det-card" style="flex:1"><div class="det-card-label">Total desde adjudicación</div><div class="timer-val ${dTotal!==null?(dTotal<=30?'timer-green':dTotal<=90?'timer-amber':'timer-red'):''}">${dTotal!==null?dTotal+'d':'—'}</div><div class="det-card-sub">${fmtF(e.fechaAdjudicacion)} → hoy</div></div>
+          <div class="det-card" style="flex:1"><div class="det-card-label">Días hasta entrega</div><div class="timer-val timer-green">${dEntrega!==null?dEntrega+'d':'—'}</div><div class="det-card-sub">Entregado el ${fmtF(e.fechaFaseUnica)}</div></div>
+        </div>
+        <div class="fase-unica-done">
+          <div><div style="font-size:13px;font-weight:700;color:var(--accent)">✓ Entregado</div><div style="font-size:12px;color:var(--text2);margin-top:3px">${fmtF(e.fechaFaseUnica)}</div></div>
+          <button class="btn-cancel" style="font-size:12px" onclick="desmarcarFaseUnica(${e.id})">Deshacer</button>
+        </div>`;
+    }
+    const dTotal=diasDesde(e.fechaAdjudicacion);
+    return `
+      ${dTotal!==null?`<div class="det-card" style="margin-bottom:16px;display:inline-block;min-width:200px"><div class="det-card-label">Total desde adjudicación</div><div class="timer-val ${dTotal<=30?'timer-green':dTotal<=90?'timer-amber':'timer-red'}">${dTotal}d</div><div class="det-card-sub">${fmtF(e.fechaAdjudicacion)} → hoy</div></div>`:''}
+      <div class="fase-unica-box"><div style="font-size:13px;font-weight:700;color:var(--text2)">Proyecto de fase única</div><div style="font-size:12px;margin-top:6px">Sin seguimiento de fases intermedias</div><button class="mark-btn" onclick="marcarFaseUnica(${e.id})">✓ Marcar como entregado</button></div>`;
+  }
+
+  const fa=faseActual(e);
+  const dTotal=diasDesde(e.fechaAdjudicacion);
+  const dFaseActual=diasDesde(faseFechaRef(e));
+
+  // Header: total counter
+  const headerHTML=`
+    <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+      <div class="det-card" style="flex:1;min-width:160px">
+        <div class="det-card-label">Total desde adjudicación</div>
+        <div class="timer-val ${dTotal!==null?(dTotal<=30?'timer-green':dTotal<=90?'timer-amber':'timer-red'):''}">${dTotal!==null?dTotal+'d':'—'}</div>
+        <div class="det-card-sub">${fmtF(e.fechaAdjudicacion)} → hoy</div>
+      </div>
+      ${fa?`<div class="det-card" style="flex:1;min-width:160px">
+        <div class="det-card-label">En fase actual (${fa})</div>
+        <div class="timer-val ${dFaseActual!==null?(dFaseActual<=15?'timer-green':dFaseActual<=45?'timer-amber':'timer-red'):''}">${dFaseActual!==null?dFaseActual+'d':'—'}</div>
+        <div class="det-card-sub">Desde ${faseFechaRef(e)?fmtF(faseFechaRef(e)):'adjudicación'}</div>
+      </div>`:`<div class="det-card" style="flex:1;min-width:160px;background:var(--accent-light)">
+        <div class="det-card-label">Estado</div>
+        <div style="font-size:16px;font-weight:700;color:var(--accent)">✓ Completado</div>
+        <div class="det-card-sub">Todas las fases finalizadas</div>
+      </div>`}
+    </div>`;
+
+  // Timeline with inter-fase duration
+  const tlHTML=fs.map((f,i)=>{
+    const fd=e.fases[f]; const done=fd?.done; const isAct=fa===f;
+    const cc=done?'done':isAct?'active':'pending';
+    const nc=done?'done':isAct?'':' pending';
+
+    // Days this fase took: from previous fase date (or adjudicacion) to this fase date
+    let duracion=null;
+    if(done&&fd.fecha){
+      const prevFecha=i>0&&e.fases[fs[i-1]]?.fecha?e.fases[fs[i-1]].fecha:e.fechaAdjudicacion;
+      if(prevFecha){
+        const d1=parseFecha(prevFecha); const d2=parseFecha(fd.fecha);
+        if(d1&&d2) duracion=Math.max(0,Math.floor((d2-d1)/864e5));
+      }
+    }
+    // Days current active fase has been running
+    let diasActiva=null;
+    if(isAct){
+      const prevFecha=i>0&&e.fases[fs[i-1]]?.fecha?e.fases[fs[i-1]].fecha:e.fechaAdjudicacion;
+      diasActiva=diasDesde(prevFecha||e.fechaAdjudicacion);
+    }
+
+    const clickable=isAct||(!done&&i>0&&e.fases[fs[i-1]]?.done);
+    return `<div class="tl-item" style="${clickable?'cursor:pointer':''}border-radius:8px;padding:2px 6px;transition:background .1s;margin-left:-6px"
+      ${clickable?`onmouseenter="this.style.background='var(--bg3)'" onmouseleave="this.style.background=''" onclick="openFaseModal(${e.id},'${f}')"`:''}>
+      <div class="tl-left"><div class="tl-circle ${cc}"></div><div class="tl-line ${done?'done':''}"></div></div>
+      <div class="tl-content">
+        <div class="tl-fase-name${nc}">${f}${isAct?'<span class="active-badge" style="margin-left:8px">activa</span>':''}${clickable&&!isAct?'<span style="font-size:10px;color:var(--text3);margin-left:8px">clic para completar</span>':''}</div>
+        <div class="tl-fase-meta">
+          ${fd?.trabajador?`<span class="tl-worker">${fd.trabajador}</span>`:''}
+          ${fd?.fecha?`<span class="tl-fecha">${fmtF(fd.fecha)}</span>`:''}
+          ${done&&duracion!==null?`<span class="tl-dias ${duracion<=15?'dias-fresh':duracion<=45?'dias-mid':'dias-old'}" title="Duración de esta fase">${duracion}d</span>`:''}
+          ${isAct&&diasActiva!==null?`<span class="tl-dias ${diasActiva<=15?'dias-fresh':diasActiva<=45?'dias-mid':'dias-old'}" title="Días en esta fase">${diasActiva}d activa</span>`:''}
+          ${done?`<span onclick="deshacerFase(event,${e.id},'${f}')" style="cursor:pointer;font-size:10px;color:var(--text3);text-decoration:underline;margin-left:4px">deshacer</span>`:''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  return headerHTML+`<div class="timeline">${tlHTML}</div>`;
+}
+
+function renderEcoTab(e){
+  const honorarios=parseFloat(e.honorarios||0);
+  const visado=parseFloat(e.visadoCoste||0);
+  const resto=honorarios-visado;
+  const editBtn=`<button onclick="openEditEco(${e.id})" style="padding:6px 14px;border-radius:8px;border:1px solid var(--border2);background:var(--surface);color:var(--text2);font-size:12px;font-family:var(--font);font-weight:700;cursor:pointer;margin-bottom:16px">✏️ Editar honorarios y visado</button>`;
+  if(!honorarios) return editBtn+'<div class="empty">Sin datos económicos. Pulsa "Editar" para añadir honorarios.</div>';
+
+  const fs=fasesDeExp(e);
+  const collabNames=DB.colaboradores.map(c=>c.nombre);
+  const isTarifaPlana = TIPOS_TARIFA_PLANA.includes(e.tipo);
+
+  let repartoHTML = '';
+  let resumenCards = '';
+
+  if(isTarifaPlana){
+    // Tarifa plana: colaborador cobra importe fijo, resto a Santiago
+    const totales = {};
+    collabNames.forEach(n=>{totales[n]=0;});
+    if(!e.pagos) e.pagos={};
+    const filas = collabNames.filter(n=>n!=='Santiago').map(n=>{
+      const collab = DB.colaboradores.find(c=>c.nombre===n);
+      const contrato = getContratoActivo(collab, e.fechaAdjudicacion);
+      const fijo = contrato?.fijos?.[e.tipo]||0;
+      totales[n] = fijo;
+      totales['Santiago'] = (totales['Santiago']||0);
+      const [bg,fc] = wc(n);
+      const cobrado = e.pagos[n]||false;
+      return `<tr>
+        <td><span class="worker-pill"><span class="worker-dot" style="background:${fc}"></span>${n}</span></td>
+        <td style="font-size:12px;color:var(--text2)">Tarifa plana ${e.tipo}</td>
+        <td style="font-family:'Courier New',monospace;font-weight:700;color:#1A6B4A">${fmtEuro(fijo)}</td>
+        <td><button onclick="togglePago(${e.id},'${n}')" style="padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;font-family:var(--font);cursor:pointer;border:1px solid ${cobrado?'#1A6B4A':'var(--border2)'};background:${cobrado?'#E8F4EF':'var(--bg)'};color:${cobrado?'#1A6B4A':'var(--text3)'}">
+          ${cobrado?'✓ Cobrado':'Pendiente'}
+        </button></td>
+      </tr>`;
+    }).join('');
+    const totalFijos = collabNames.filter(n=>n!=='Santiago').reduce((s,n)=>s+totales[n],0);
+    totales['Santiago'] = resto - totalFijos;
+
+    repartoHTML = `
+      <div class="sec-title" style="margin-bottom:8px">Reparto tarifa plana</div>
+      <table class="reparto-table">
+        <thead><tr><th>Colaborador</th><th>Concepto</th><th>Importe</th><th>Estado</th></tr></thead>
+        <tbody>${filas}
+          <tr style="background:var(--accent-light)">
+            <td><span class="mia-badge">Santiago</span></td>
+            <td style="font-size:12px;color:var(--text2)">Resto tras tarifas</td>
+            <td style="font-family:'Courier New',monospace;font-weight:700;color:#1A6B4A">${fmtEuro(totales['Santiago'])}</td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>`;
+
+    resumenCards = collabNames.map(n=>{
+      const [bg,fc]=wc(n);
+      const tot=totales[n]||0;
+      return `<div class="rc-card" style="background:${bg};border-color:${fc}30">
+        <div style="font-size:11px;font-weight:700;color:${fc};text-transform:uppercase;letter-spacing:.05em">${n}</div>
+        <div style="font-size:22px;font-weight:700;color:${fc};margin-top:6px;font-family:'Courier New',monospace">${fmtEuro(tot)}</div>
+        <div style="font-size:11px;color:${fc};opacity:.7;margin-top:2px">${resto>0?((tot/resto)*100).toFixed(1)+'% del neto':''}</div>
+      </div>`;
+    }).join('');
+
+  } else {
+    // Reparto por porcentajes de fase
+    const fasesTodas=fs?['Captacion','Responsabilidad',...fs]:['Captacion','Responsabilidad'];
+    const fasesReparto=fasesTodas.filter(f=>!FASES_SIN_HONORARIOS.includes(f));
+    const reparto=e.reparto||{};
+    const totales={};
+    collabNames.forEach(n=>{totales[n]=0;});
+    fasesReparto.forEach(f=>{
+      const pct=PORCENTAJES_FASE[f]||0;
+      const importe=resto*pct;
+      const quien=reparto[f]||'Santiago';
+      if(totales[quien]!==undefined)totales[quien]+=importe;
+    });
+    if(!e.pagos) e.pagos={};
+    const filasFases=fasesReparto.map(f=>{
+      const pct=PORCENTAJES_FASE[f]||0;
+      const importe=resto*pct;
+      const quien=reparto[f]||'Santiago';
+      const bloqueado=f==='Responsabilidad';
+      const selOpts=collabNames.map(n=>`<option value="${n}" ${n===quien?'selected':''}>${n}</option>`).join('');
+      const faseDone = e.fases?.[f]?.done||false;
+      const cobradoFase = e.pagos[f]||false;
+      const estadoBtn = `<button onclick="togglePagoFase(${e.id},'${f}')" style="padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;font-family:var(--font);cursor:pointer;border:1px solid ${cobradoFase?'#1A6B4A':faseDone?'var(--amber)':'var(--border2)'};background:${cobradoFase?'#E8F4EF':faseDone?'var(--amber-light)':'var(--bg)'};color:${cobradoFase?'#1A6B4A':faseDone?'var(--amber)':'var(--text3)'}">
+        ${cobradoFase?'✓ Cobrado':faseDone?'Completada':'Pendiente'}
+      </button>`;
+      return `<tr>
+        <td style="font-weight:700">${f==='Captacion'?'Captación':f}</td>
+        <td style="text-align:center;font-family:'Courier New',monospace">${(pct*100).toFixed(1)}%</td>
+        <td style="font-family:'Courier New',monospace;font-weight:700;color:#1A6B4A">${fmtEuro(importe)}</td>
+        <td>${bloqueado?`<span class="mia-badge">Santiago (siempre)</span>`:`<select class="collab-sel" onchange="cambiarReparto(${e.id},'${f}',this.value)">${selOpts}</select>`}</td>
+        <td>${estadoBtn}</td>
+      </tr>`;
+    }).join('');
+    repartoHTML = `
+      <div class="sec-title" style="margin-bottom:8px">Reparto por fases</div>
+      <table class="reparto-table">
+        <thead><tr><th>Fase</th><th>%</th><th>Importe</th><th>Ejecuta</th><th>Estado pago</th></tr></thead>
+        <tbody>${filasFases}</tbody>
+        <tr class="total-row"><td colspan="2">TOTAL</td><td style="font-family:'Courier New',monospace;color:#1A6B4A">${fmtEuro(resto)}</td><td></td><td></td></tr>
+      </table>`;
+    resumenCards = collabNames.map(n=>{
+      const [bg,fc]=wc(n);
+      const tot=totales[n]||0;
+      return `<div class="rc-card" style="background:${bg};border-color:${fc}30">
+        <div style="font-size:11px;font-weight:700;color:${fc};text-transform:uppercase;letter-spacing:.05em">${n}</div>
+        <div style="font-size:22px;font-weight:700;color:${fc};margin-top:6px;font-family:'Courier New',monospace">${fmtEuro(tot)}</div>
+        <div style="font-size:11px;color:${fc};opacity:.7;margin-top:2px">${honorarios?((tot/honorarios)*100).toFixed(1)+'% del total':''}</div>
+      </div>`;
+    }).join('');
+  }
+  const ivaHonorarios = honorarios * 0.21;
+  const totalConIva = honorarios + ivaHonorarios;
+  const ivaVisado = visado * 0.21;
+  const totalVisadoConIva = visado + ivaVisado;
+  const ivaLiquidar = ivaHonorarios - ivaVisado;
+
+  return editBtn+`
+    <div style="margin-bottom:16px">
+      <div class="sec-title" style="margin-bottom:10px">Factura al cliente</div>
+      <div class="eco-grid" style="grid-template-columns:repeat(3,1fr)">
+        <div class="eco-card"><div class="eco-card-label">Base imponible</div><div class="eco-card-val">${fmtEuro(honorarios)}</div><div class="det-card-sub">Honorarios sin IVA</div></div>
+        <div class="eco-card"><div class="eco-card-label">IVA 21%</div><div class="eco-card-val" style="color:var(--blue)">${fmtEuro(ivaHonorarios)}</div></div>
+        <div class="eco-card" style="background:var(--accent-light)"><div class="eco-card-label">Total factura</div><div class="eco-card-val eco-green">${fmtEuro(totalConIva)}</div><div class="det-card-sub">Lo que paga el cliente</div></div>
+      </div>
+    </div>
+    <div style="margin-bottom:16px">
+      <div class="sec-title" style="margin-bottom:10px">Gasto visado (deducible)</div>
+      <div class="eco-grid" style="grid-template-columns:repeat(3,1fr)">
+        <div class="eco-card"><div class="eco-card-label">Visado sin IVA</div><div class="eco-card-val eco-amber">−${fmtEuro(visado)}</div></div>
+        <div class="eco-card"><div class="eco-card-label">IVA visado 21%</div><div class="eco-card-val eco-amber">−${fmtEuro(ivaVisado)}</div><div class="det-card-sub">IVA deducible</div></div>
+        <div class="eco-card"><div class="eco-card-label">Total visado con IVA</div><div class="eco-card-val eco-amber">−${fmtEuro(totalVisadoConIva)}</div></div>
+      </div>
+    </div>
+    <div style="margin-bottom:16px">
+      <div class="sec-title" style="margin-bottom:10px">Liquidación IVA</div>
+      <div class="eco-grid" style="grid-template-columns:repeat(3,1fr)">
+        <div class="eco-card"><div class="eco-card-label">IVA repercutido</div><div class="eco-card-val" style="color:var(--blue)">${fmtEuro(ivaHonorarios)}</div><div class="det-card-sub">Cobrado al cliente</div></div>
+        <div class="eco-card"><div class="eco-card-label">IVA soportado</div><div class="eco-card-val eco-amber">−${fmtEuro(ivaVisado)}</div><div class="det-card-sub">Pagado en visado</div></div>
+        <div class="eco-card" style="background:#EEF2FD"><div class="eco-card-label">IVA neto a Hacienda</div><div class="eco-card-val" style="color:var(--blue)">${fmtEuro(ivaLiquidar)}</div><div class="det-card-sub">Diferencia a ingresar</div></div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px">
+      <div class="eco-card" style="background:var(--accent-light);border-color:var(--accent)">
+        <div class="det-card-label">Resto a repartir (base neta)</div>
+        <div class="eco-card-val eco-green" style="font-size:24px">${fmtEuro(resto)}</div>
+        <div class="det-card-sub">Base honorarios (${fmtEuro(honorarios)}) − base visado (${fmtEuro(visado)}) · El IVA se gestiona aparte</div>
+      </div>
+    </div>
+    ${repartoHTML}
+    <div class="sec-title" style="margin-top:20px">Resumen por persona</div>
+    <div class="resumen-collab">${resumenCards}</div>`;
+}
+
+function cambiarReparto(expId,fase,quien){
+  const e=DB.expedientes.find(x=>x.id===expId);if(!e)return;
+  if(!e.reparto)e.reparto={};
+  e.reparto[fase]=quien;
+  save();
+  // Refresh eco tab
+  const t=document.getElementById('det-eco');
+  if(t&&t.style.display!=='none')t.innerHTML=renderEcoTab(e);
+}
+
+// -- DASHBOARD --
+function renderDashboard(){
+  const total=DB.expedientes.length;
+  const activos=DB.expedientes.filter(e=>{const fs=fasesDeExp(e);return fs?faseActual(e)!==null:!e.fechaFaseUnica;}).length;
+  const dias=DB.expedientes.filter(e=>e.fechaAdjudicacion).map(e=>diasDesde(e.fechaAdjudicacion));
+  const prom=dias.length?Math.round(dias.reduce((a,b)=>a+b,0)/dias.length):0;
+  const viejos=DB.expedientes.filter(e=>diasDesde(e.fechaAdjudicacion)>60).length;
+  document.getElementById('stats').innerHTML=`
+    <div class="sc green"><div class="sc-val">${total}</div><div class="sc-label">Expedientes totales</div></div>
+    <div class="sc amber"><div class="sc-val">${activos}</div><div class="sc-label">En progreso</div></div>
+    <div class="sc blue"><div class="sc-val">${prom}d</div><div class="sc-label">Promedio días adjudicación</div></div>
+    <div class="sc warn"><div class="sc-val">${viejos}</div><div class="sc-label">Proyectos &gt;60 días</div></div>`;
+  const sorted=[...DB.expedientes].filter(e=>e.fechaAdjudicacion).sort((a,b)=>diasDesde(b.fechaAdjudicacion)-diasDesde(a.fechaAdjudicacion)).slice(0,6);
+  document.getElementById('top-dias').innerHTML=sorted.map(e=>{const d=diasDesde(e.fechaAdjudicacion);return `<tr onclick="nav('expedientes');selExp(${e.id})"><td><span class="ref-cell">${e.ref}</span><div style="font-size:11px;color:var(--text3);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.trabajo}</div></td><td>${e.trabajador||'—'}</td><td><span class="dias-chip ${dc(d)}">${d}d</span></td></tr>`;}).join('');
+  const wmap={};
+  DB.expedientes.forEach(e=>{const w=e.trabajador||'Sin asignar';if(!wmap[w])wmap[w]={n:0,dias:[]};wmap[w].n++;const d=diasDesde(e.fechaAdjudicacion);if(d!==null)wmap[w].dias.push(d);});
+  document.getElementById('carga-trabajadores').innerHTML=Object.entries(wmap).map(([w,v])=>{const p=v.dias.length?Math.round(v.dias.reduce((a,b)=>a+b,0)/v.dias.length):0;const [bg,fc]=wc(w);return `<tr><td><span class="worker-pill"><span class="worker-dot" style="background:${fc}"></span>${w}</span></td><td style="font-weight:700">${v.n}</td><td><span class="dias-chip ${dc(p)}">${p}d</span></td></tr>`;}).join('');
+}
+
+// -- COLABORADORES --
+function renderColaboradores(){
+  const titular=DB.colaboradores.find(c=>c.rol==='titular');
+  const externos=DB.colaboradores.filter(c=>c.rol!=='titular');
+  const all=[...(titular?[titular]:[]),...externos];
+  document.getElementById('workers-grid').innerHTML=all.map(c=>{
+    const [bg,fc]=c.color||['#eeece7','#5a5852'];
+    const exps=DB.expedientes.filter(e=>e.trabajador===c.nombre||Object.values(e.reparto||{}).includes(c.nombre));
+    return `<div class="wcard${c.rol!=='titular'?' collab-card':''}${selCollab===c.id?' sel':''}" onclick="selCollab2(${c.id})">
+      <div class="wcard-av" style="background:${bg};color:${fc}">${c.nombre.slice(0,2).toUpperCase()}</div>
+      <div class="wcard-name">${c.nombre}</div>
+      <div class="wcard-role" style="color:${fc}">${c.rol==='titular'?'Titular':c.rol==='trabajador'?'Trabajador':'Colaborador'}</div>
+      <div class="wcard-count">${exps.length} expediente${exps.length!==1?'s':''}</div>
+    </div>`;
+  }).join('');
+  if(selCollab!==null)renderCollabDetail();
+}
+
+function selCollab2(id){selCollab=selCollab===id?null:id;renderColaboradores();}
+
+function calcEcoCollab(collabNombre, desde, hasta){
+  const result = { cobrado: 0, pendiente: 0, expedientes: [] };
+  const collab = DB.colaboradores.find(c=>c.nombre===collabNombre);
+
+  DB.expedientes.forEach(e => {
+    const honorarios = parseFloat(e.honorarios||0);
+    const visado = parseFloat(e.visadoCoste||0);
+    const resto = honorarios - visado;
+    if(!honorarios) return;
+
+    // Filter by date range
+    if(desde || hasta) {
+      const adjDate = e.fechaAdjudicacion ? new Date(e.fechaAdjudicacion) : null;
+      if(!adjDate) return;
+      if(desde && adjDate < new Date(desde)) return;
+      if(hasta && adjDate > new Date(hasta)) return;
+    }
+
+    const isTarifaPlana = TIPOS_TARIFA_PLANA.includes(e.tipo);
+    let totalCollab = 0;
+    let cobradoCollab = 0;
+
+    if(isTarifaPlana){
+      // Tarifa plana: check if this collab has a fixed rate for this tipo
+      if(collabNombre === 'Santiago'){
+        // Santiago gets the rest after all fijos
+        const contrato = getContratoActivo(collab, e.fechaAdjudicacion);
+        const otrosCollabs = DB.colaboradores.filter(c=>c.nombre!=='Santiago');
+        const totalFijos = otrosCollabs.reduce((sum,c)=>{
+          const ct = getContratoActivo(c, e.fechaAdjudicacion);
+          return sum + (ct?.fijos?.[e.tipo]||0);
+        },0);
+        totalCollab = resto - totalFijos;
+        cobradoCollab = (e.pagos?.['Santiago_resto']||false) ? totalCollab : 0;
+      } else {
+        const contrato = getContratoActivo(collab, e.fechaAdjudicacion);
+        const fijo = contrato?.fijos?.[e.tipo]||0;
+        if(fijo > 0){
+          totalCollab = fijo;
+          cobradoCollab = (e.pagos?.[collabNombre]||false) ? fijo : 0;
+        }
+      }
+    } else {
+      // Reparto por fases
+      const fs = TIPOS_CONFIG[e.tipo]?.fases || null;
+      const fasesReparto = fs
+        ? ['Captacion','Responsabilidad',...fs.filter(f=>!FASES_SIN_HONORARIOS.includes(f))]
+        : ['Captacion','Responsabilidad'];
+      const reparto = e.reparto || {};
+      fasesReparto.forEach(f => {
+        const pct = PORCENTAJES_FASE[f]||0;
+        const importe = resto * pct;
+        if((reparto[f]||'Santiago') === collabNombre) {
+          totalCollab += importe;
+          const pagado = e.pagos?.[f]||false;
+          if(pagado) cobradoCollab += importe;
+        }
+      });
+    }
+
+    if(totalCollab > 0) {
+      result.cobrado += cobradoCollab;
+      result.pendiente += (totalCollab - cobradoCollab);
+      result.expedientes.push({
+        ref: e.ref, tipo: e.tipo, trabajo: e.trabajo,
+        total: totalCollab, cobrado: cobradoCollab,
+        pendiente: totalCollab - cobradoCollab,
+        fecha: e.fechaAdjudicacion,
+        esTarifaPlana: isTarifaPlana
+      });
+    }
+  });
+  return result;
+}
+
+function renderEcoResumen(collabId){
+  const c = DB.colaboradores.find(x=>x.id===collabId); if(!c) return;
+  const desde = document.getElementById('eco-desde-'+collabId)?.value || '';
+  const hasta = document.getElementById('eco-hasta-'+collabId)?.value || '';
+  const anyo = document.getElementById('eco-anyo-'+collabId)?.value || '';
+  let desdeF = desde, hastaF = hasta;
+  if(anyo) { desdeF = anyo+'-01-01'; hastaF = anyo+'-12-31'; }
+
+  const eco = calcEcoCollab(c.nombre, desdeF, hastaF);
+  const total = eco.cobrado + eco.pendiente;
+  const [bg,fc] = c.color||['#eeece7','#5a5852'];
+
+  const filas = eco.expedientes.map(ex => `
+    <tr>
+      <td>
+        <span class="ref-cell" style="background:${tipoColor(ex.tipo).bg};color:${tipoColor(ex.tipo).text};border:1px solid ${tipoColor(ex.tipo).border}">${ex.ref}</span>
+        ${ex.esTarifaPlana?'<span style="font-size:10px;background:#FEF6E4;color:#8A5F00;padding:1px 6px;border-radius:4px;margin-left:4px;font-weight:700">FIJO</span>':''}
+      </td>
+      <td style="font-size:12px;color:var(--text2)">${ex.trabajo}</td>
+      <td style="font-family:'Courier New',monospace;font-weight:700;color:#1A6B4A;text-align:right">${fmtEuro(ex.cobrado)}</td>
+      <td style="font-family:'Courier New',monospace;font-weight:700;color:var(--amber);text-align:right">${fmtEuro(ex.pendiente)}</td>
+      <td style="font-family:'Courier New',monospace;font-weight:700;text-align:right">${fmtEuro(ex.total)}</td>
+    </tr>`).join('') || '<tr><td colspan="5" class="empty">Sin expedientes en este período</td></tr>';
+
+  const pctCobrado = total>0?Math.round(eco.cobrado/total*100):0;
+
+  document.getElementById('eco-resumen-body-'+collabId).innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:8px">
+      <div class="det-card"><div class="det-card-label">Cobrado</div><div class="eco-card-val eco-green">${fmtEuro(eco.cobrado)}</div><div class="det-card-sub">${pctCobrado}% del total</div></div>
+      <div class="det-card"><div class="det-card-label">Pendiente de cobro</div><div class="eco-card-val eco-amber">${fmtEuro(eco.pendiente)}</div><div class="det-card-sub">${100-pctCobrado}% del total</div></div>
+      <div class="det-card" style="background:${bg}"><div class="det-card-label">Total período</div><div class="eco-card-val" style="color:${fc}">${fmtEuro(total)}</div><div class="det-card-sub">${eco.expedientes.length} expediente${eco.expedientes.length!==1?'s':''}</div></div>
+    </div>
+    <div style="height:6px;background:var(--border);border-radius:3px;margin-bottom:16px;overflow:hidden">
+      <div style="height:100%;width:${pctCobrado}%;background:#1A6B4A;border-radius:3px;transition:width .3s"></div>
+    </div>
+    <table class="reparto-table">
+      <thead><tr><th>Referencia</th><th>Trabajo</th><th style="text-align:right">Cobrado</th><th style="text-align:right">Pendiente</th><th style="text-align:right">Total</th></tr></thead>
+      <tbody>${filas}</tbody>
+      <tr class="total-row">
+        <td colspan="2">TOTAL</td>
+        <td style="text-align:right;color:#1A6B4A;font-family:'Courier New',monospace">${fmtEuro(eco.cobrado)}</td>
+        <td style="text-align:right;color:var(--amber);font-family:'Courier New',monospace">${fmtEuro(eco.pendiente)}</td>
+        <td style="text-align:right;font-family:'Courier New',monospace">${fmtEuro(total)}</td>
+      </tr>
+    </table>`;
+}
+
+function getYears(){
+  const years = new Set(DB.expedientes.map(e => e.fechaAdjudicacion?.slice(0,4)).filter(Boolean));
+  return [...years].sort().reverse();
+}
+
+function renderCollabDetail(){
+  const c=DB.colaboradores.find(x=>x.id===selCollab);if(!c)return;
+  const [bg,fc]=c.color||['#eeece7','#5a5852'];
+  const tiposList=Object.keys(TIPOS_CONFIG);
+  const fijoRows=tiposList.map(t=>{
+    const val=c.fijos?.[t]||'';
+    return `<div class="cond-row">
+      <span class="cond-name">${t} — ${TIPOS_CONFIG[t].desc}</span>
+      <div style="display:flex;align-items:center;gap:4px">
+        <input class="cond-input" type="number" placeholder="0" value="${val}"
+          onchange="updateFijo(${c.id},'${t}',this.value)">
+        <span class="cond-unit">€ fijo</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  const fasesTodasList=['Captacion','Responsabilidad',...Object.values(TIPOS_CONFIG).flatMap(t=>t.fases||[]).filter((v,i,a)=>a.indexOf(v)===i)];
+  const pctRows=fasesTodasList.map(f=>{
+    const val=c.porcentajes?.[f]!==undefined?c.porcentajes[f]:'';
+    return `<div class="cond-row">
+      <span class="cond-name">${f==='Captacion'?'Captación':f}</span>
+      <div style="display:flex;align-items:center;gap:4px">
+        <input class="cond-input" type="number" placeholder="—" value="${val}" min="0" max="100"
+          onchange="updatePct(${c.id},'${f}',this.value)">
+        <span class="cond-unit">%</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  const years=getYears();
+  const yearOpts=`<option value="">Todos los años</option>${years.map(y=>`<option value="${y}">${y}</option>`).join('')}`;
+  const cid=c.id;
+
+  document.getElementById('collab-detail').innerHTML=`
+  <div class="collab-ficha">
+    <div class="ficha-title">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:38px;height:38px;border-radius:10px;background:${bg};color:${fc};display:flex;align-items:center;justify-content:center;font-weight:700">${c.nombre.slice(0,2).toUpperCase()}</div>
+        <div><div style="font-size:16px;font-weight:700">${c.nombre}</div><div style="font-size:12px;color:var(--text3)">${c.rol==='titular'?'Titular del estudio':c.rol==='trabajador'?'Trabajador':'Colaborador externo'}</div></div>
+      </div>
+      <button class="btn-cancel" onclick="selCollab2(${cid})">✕ Cerrar</button>
+    </div>
+    <div class="det-tabs">
+      <div class="det-tab on" onclick="collabTab(this,'ctab-cond-${cid}')">⚙️ Condiciones</div>
+      <div class="det-tab" onclick="collabTab(this,'ctab-hist-${cid}');renderHistorialContratos(${cid})">📋 Historial contratos</div>
+      <div class="det-tab" onclick="collabTab(this,'ctab-eco-${cid}');renderEcoResumen(${cid})">💰 Resumen económico</div>
+    </div>
+    <div id="ctab-cond-${cid}" style="padding:20px">
+      <div class="condiciones-grid">
+        <div class="cond-section">
+          <div class="cond-label">Importe fijo por tipo de proyecto</div>
+          ${fijoRows}
+        </div>
+        <div class="cond-section">
+          <div class="cond-label">% que cobra de cada fase</div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Del importe según el reparto del expediente</div>
+          ${pctRows}
+        </div>
+      </div>
+    </div>
+    <div id="ctab-hist-${cid}" style="padding:20px;display:none">
+      <div id="hist-body-${cid}"><div class="empty">Cargando...</div></div>
+    </div>
+    <div id="ctab-eco-${cid}" style="padding:20px;display:none">
+      <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:20px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Año</div>
+          <select id="eco-anyo-${cid}" onchange="document.getElementById('eco-desde-${cid}').value='';document.getElementById('eco-hasta-${cid}').value='';renderEcoResumen(${cid})" style="padding:7px 11px;border-radius:8px;border:1px solid var(--border);background:var(--bg);font-size:12px;font-family:var(--font)">${yearOpts}</select>
+        </div>
+        <div style="font-size:12px;color:var(--text3);padding-bottom:8px">ó rango</div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Desde</div>
+          <input type="date" id="eco-desde-${cid}" onchange="document.getElementById('eco-anyo-${cid}').value='';renderEcoResumen(${cid})" style="padding:7px 11px;border-radius:8px;border:1px solid var(--border);background:var(--bg);font-size:12px;font-family:var(--font)">
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Hasta</div>
+          <input type="date" id="eco-hasta-${cid}" onchange="document.getElementById('eco-anyo-${cid}').value='';renderEcoResumen(${cid})" style="padding:7px 11px;border-radius:8px;border:1px solid var(--border);background:var(--bg);font-size:12px;font-family:var(--font)">
+        </div>
+        <button onclick="document.getElementById('eco-anyo-${cid}').value='';document.getElementById('eco-desde-${cid}').value='';document.getElementById('eco-hasta-${cid}').value='';renderEcoResumen(${cid})" class="btn-cancel" style="padding:7px 14px">Ver todo</button>
+      </div>
+      <div id="eco-resumen-body-${cid}"><div class="empty">Cargando...</div></div>
+    </div>
+  </div>`;
+  setTimeout(()=>renderEcoResumen(cid),50);
+}
+
+function updateFijo(collabId,tipo,val){
+  const c=DB.colaboradores.find(x=>x.id===collabId);if(!c)return;
+  if(!c.fijos)c.fijos={};
+  c.fijos[tipo]=parseFloat(val)||0;
+  save();
+}
+function updatePct(collabId,fase,val){
+  const c=DB.colaboradores.find(x=>x.id===collabId);if(!c)return;
+  if(!c.porcentajes)c.porcentajes={};
+  c.porcentajes[fase]=parseFloat(val)||0;
+  save();
+}
+
+// -- PROGRESO --
+function renderProgreso(){
+  const list=DB.expedientes.filter(e=>{const fs=fasesDeExp(e);return fs?faseActual(e)!==null:!e.fechaFaseUnica;}).sort((a,b)=>diasDesde(b.fechaAdjudicacion)-diasDesde(a.fechaAdjudicacion));
+  document.getElementById('tbody-prog').innerHTML=list.map(e=>{
+    const dAdj=diasDesde(e.fechaAdjudicacion);
+    const fs=fasesDeExp(e);
+    const fa=fs?faseActual(e):'Pendiente entrega';
+    const dFase=fs?diasDesde(faseFechaRef(e)):diasDesde(e.fechaAdjudicacion);
+    const [bg,fc]=wc(e.trabajador);
+    return `<tr onclick="navToExp(${e.id})">
+      <td><span class="ref-cell" style="background:${tipoColor(e.tipo).bg};color:${tipoColor(e.tipo).text};border:1px solid ${tipoColor(e.tipo).border}">${e.ref}</span></td>
+      <td>${e.trabajo}</td>
+      <td><span class="worker-pill"><span class="worker-dot" style="background:${fc}"></span>${e.trabajador||'—'}</span></td>
+      <td>${dAdj!==null?`<span class="dias-chip ${dc(dAdj)}">${dAdj}d</span>`:'—'}</td>
+      <td style="font-size:12px;font-weight:700">${fa||'—'}</td>
+      <td>${dFase!==null?`<span class="dias-chip ${dc(dFase)}">${dFase}d</span>`:'—'}</td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="6" class="empty">No hay expedientes en progreso</td></tr>';
+}
+
+// -- NAV --
+function nav(v,el){
+  document.querySelectorAll('.ni').forEach(x=>x.classList.remove('on'));
+  if(el)el.classList.add('on');
+  else{const idx={expedientes:0,dashboard:1,colaboradores:2,progreso:3};document.querySelectorAll('.ni')[idx[v]]?.classList.add('on');}
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));
+  document.getElementById('view-'+v).classList.add('on');
+  curView=v;
+  const titles={expedientes:['EXPEDIENTES',''],dashboard:['RESUMEN',''],colaboradores:['COLABORADORES',''],progreso:['EN PROGRESO',''],configuracion:['CONFIGURACIÓN','']};
+  document.getElementById('tb-title').textContent=titles[v][0];
+  document.getElementById('tb-sub').textContent=titles[v][1];
+  render();
+}
+function navToExp(id){nav('expedientes');setTimeout(()=>selExp(id),50);}
+function buscar(v){searchQ=v;if(curView==='expedientes')renderExpedientes();}
+function filtrarTipo(v){tipoQ=v;if(curView==='expedientes')renderExpedientes();}
+
+// -- MODALS --
+function openModal(id){
+  if(id==='exp'){buildExpModal();}
+  if(id==='collab'){document.getElementById('c-nombre').value='';document.getElementById('c-rol').value='colaborador';}
+  document.getElementById('overlay-'+id).classList.add('on');
+}
+function closeModal(id){document.getElementById('overlay-'+id).classList.remove('on');}
+function overlayClick(e,id){if(e.target===document.getElementById(id))closeModal(id.replace('overlay-',''));}
+
+function buildExpModal(){
+  // Populate tipo select
+  const sel=document.getElementById('f-tipo');
+  sel.innerHTML='<option value="">— Selecciona tipo —</option>';
+  Object.entries(TIPOS_CONFIG).forEach(([k,v])=>{
+    sel.innerHTML+=`<option value="${k}">${k} — ${v.desc}</option>`;
+  });
+  // Populate worker select
+  const ws=document.getElementById('f-worker');
+  ws.innerHTML=DB.colaboradores.map(c=>`<option value="${c.nombre}"${c.nombre==='Santiago'?' selected':''}>${c.nombre}</option>`).join('');
+  // Reset fields
+  ['f-cliente','f-trabajo','f-contacto','f-presu','f-adjud','f-honorarios','f-visado-coste','f-notas','f-ref-manual'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('ref-preview').textContent='— se generará automáticamente —';
+  document.getElementById('fases-checks-modal').innerHTML='';
+  document.getElementById('fg-fases-completadas').style.display='none';
+  document.getElementById('fg-eco-preview').style.display='none';
+  document.getElementById('f-edit-id').value='';
+  document.getElementById('modal-exp-title').innerHTML='Nuevo <span>expediente</span>';
+  document.getElementById('btn-guardar-exp').textContent='Crear expediente';
+  // Reset ref mode to auto
+  _refMode='auto';
+  setRefMode('auto');
+  // Populate tipo filter
+  const filtro=document.getElementById('filtro-tipo');
+  filtro.innerHTML='<option value="">Todos los tipos</option>';
+  Object.entries(TIPOS_CONFIG).forEach(([k,v])=>{filtro.innerHTML+=`<option value="${k}">${k} — ${v.desc}</option>`;});
+}
+
+function onTipoChange(){
+  actualizarRef();
+  const tipo=document.getElementById('f-tipo').value;
+  const fases=TIPOS_CONFIG[tipo]?.fases;
+  const fg=document.getElementById('fg-fases-completadas');
+  const checks=document.getElementById('fases-checks-modal');
+  if(fases){
+    fg.style.display='block';
+    checks.innerHTML=fases.map(f=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;border:1px solid var(--border);margin-bottom:6px;background:var(--bg)" id="fc-row-${f}">
+        <div class="fc-check" id="fc-${f}" onclick="toggleFc2('${f}','${tipo}')" style="cursor:pointer;width:16px;height:16px;border-radius:4px;border:1.5px solid var(--border2);flex-shrink:0;background:#fff;transition:all .12s"></div>
+        <span style="font-size:12px;font-weight:700;flex:1;color:var(--text2)" id="fc-label-${f}">${f}</span>
+        <div id="fc-fecha-wrap-${f}" style="display:none;align-items:center;gap:4px">
+          <input type="date" id="fc-fecha-${f}" style="width:140px;font-size:12px;padding:4px 8px">
+          <span style="font-size:10px;color:var(--text3);white-space:nowrap">opcional</span>
+        </div>
+      </div>`).join('');
+  } else {
+    fg.style.display='none';
+    checks.innerHTML='';
+  }
+}
+
+function toggleFc2(f,tipo){
+  const check=document.getElementById('fc-'+f);
+  const row=document.getElementById('fc-row-'+f);
+  const fechaInput=document.getElementById('fc-fecha-'+f);
+  const label=document.getElementById('fc-label-'+f);
+  const isOn=check.classList.contains('on');
+  if(isOn){
+    check.classList.remove('on');
+    check.style.background='#fff';
+    check.style.borderColor='var(--border2)';
+    check.innerHTML='';
+    row.style.background='var(--bg)';
+    label.style.color='var(--text2)';
+    const fechaWrap=document.getElementById('fc-fecha-wrap-'+f);
+    if(fechaWrap)fechaWrap.style.display='none';
+    fechaInput.style.display='none';
+    // Uncheck subsequent
+    const fases=TIPOS_CONFIG[tipo]?.fases||[];
+    const idx=fases.indexOf(f);
+    fases.slice(idx+1).forEach(nf=>{
+      const nc=document.getElementById('fc-'+nf);
+      if(nc&&nc.classList.contains('on')){toggleFc2(nf,tipo);}
+    });
+  } else {
+    check.classList.add('on');
+    check.style.background='var(--accent)';
+    check.style.borderColor='var(--accent)';
+    check.innerHTML='<svg width="10" height="10" viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2.5" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>';
+    row.style.background='var(--accent-light)';
+    label.style.color='var(--accent)';
+    const fechaWrap2=document.getElementById('fc-fecha-wrap-'+f);
+    if(fechaWrap2)fechaWrap2.style.display='flex';
+    fechaInput.style.display='block';
+    // Auto-check previous
+    const fases=TIPOS_CONFIG[tipo]?.fases||[];
+    const idx=fases.indexOf(f);
+    fases.slice(0,idx).forEach(pf=>{
+      const pc=document.getElementById('fc-'+pf);
+      if(pc&&!pc.classList.contains('on')){toggleFc2(pf,tipo);}
+    });
+  }
+}
+
+// toggleFc replaced by toggleFc2
+
+let _refMode = 'auto';
+
+function setRefMode(mode){
+  _refMode=mode;
+  const autoBtn=document.getElementById('ref-mode-auto');
+  const manualBtn=document.getElementById('ref-mode-manual');
+  const autoPreview=document.getElementById('ref-auto-preview');
+  const manualInput=document.getElementById('ref-manual-input');
+  if(mode==='auto'){
+    autoBtn.style.border='2px solid var(--accent)';autoBtn.style.background='var(--accent-light)';autoBtn.style.color='var(--accent)';
+    manualBtn.style.border='1px solid var(--border)';manualBtn.style.background='var(--bg)';manualBtn.style.color='var(--text3)';
+    autoPreview.style.display='block';manualInput.style.display='none';
+    actualizarRef();
+  } else {
+    manualBtn.style.border='2px solid var(--accent)';manualBtn.style.background='var(--accent-light)';manualBtn.style.color='var(--accent)';
+    autoBtn.style.border='1px solid var(--border)';autoBtn.style.background='var(--bg)';autoBtn.style.color='var(--text3)';
+    autoPreview.style.display='none';manualInput.style.display='block';
+    document.getElementById('f-ref-manual').focus();
+  }
+}
+
+function previewManualRef(){
+  // just live feedback, nothing needed
+}
+
+function actualizarRef(){
+  if(_refMode!=='auto') return;
+  const tipo=document.getElementById('f-tipo').value;
+  const cliente=document.getElementById('f-cliente').value;
+  const year=new Date().getFullYear();
+  const num=siguienteNumero();
+  const clienteFmt=formatearCliente(cliente);
+  const prev=document.getElementById('ref-preview');
+  if(!tipo&&!clienteFmt){prev.textContent='— se generará automáticamente —';prev.style.color='var(--text3)';return;}
+  prev.textContent=[year,num,tipo||'???',clienteFmt||'???'].join('_');
+  prev.style.color='var(--accent)';
+}
+
+function actualizarEco(){
+  const hon=parseFloat(document.getElementById('f-honorarios').value)||0;
+  const vis=parseFloat(document.getElementById('f-visado-coste').value)||0;
+  const prev=document.getElementById('fg-eco-preview');
+  const val=document.getElementById('eco-preview-val');
+  if(hon>0){
+    prev.style.display='block';
+    const iva=hon*0.21;
+    const ivaVis=vis*0.21;
+    val.innerHTML=`<span style="font-size:12px;color:var(--text2)">Factura cliente: <strong>${fmtEuro(hon+iva)}</strong> (base ${fmtEuro(hon)} + IVA ${fmtEuro(iva)})</span><br><span style="font-size:11px;color:var(--text3)">Visado: ${fmtEuro(vis+ivaVis)} · Resto a repartir: <strong>${fmtEuro(hon-vis)}</strong></span>`;
+  }
+  else{prev.style.display='none';}
+}
+
+function guardarExp(){
+  const tipo=document.getElementById('f-tipo').value;
+  const cliente=document.getElementById('f-cliente').value.trim();
+  const trabajo=document.getElementById('f-trabajo').value.trim();
+  if(!tipo){alert('Selecciona el tipo de trabajo.');return;}
+  if(!cliente){alert('Escribe el nombre del cliente.');return;}
+  if(!trabajo){alert('Escribe el nombre del trabajo.');return;}
+
+  // EDIT MODE
+  const editId = parseInt(document.getElementById('f-edit-id').value);
+  if(editId){
+    const e = DB.expedientes.find(x=>x.id===editId);
+    if(!e) return;
+    // Update ref
+    if(_refMode==='manual'){
+      e.ref = document.getElementById('f-ref-manual').value.trim()||e.ref;
+    } else {
+      e.ref = [new Date().getFullYear(), e.ref.split('_')[1]||'000', tipo, formatearCliente(cliente)].join('_');
+    }
+    e.tipo=tipo; e.cliente=cliente; e.trabajo=trabajo;
+    e.trabajador=document.getElementById('f-worker').value;
+    e.fechaContacto=document.getElementById('f-contacto').value;
+    e.fechaPresupuesto=document.getElementById('f-presu').value;
+    e.fechaAdjudicacion=document.getElementById('f-adjud').value;
+    e.honorarios=parseFloat(document.getElementById('f-honorarios').value)||0;
+    e.visadoCoste=parseFloat(document.getElementById('f-visado-coste').value)||0;
+    e.notas=document.getElementById('f-notas').value;
+    // Update fases if type changed
+    const fasesList=TIPOS_CONFIG[tipo]?.fases||null;
+    if(fasesList){
+      fasesList.forEach(f=>{
+        const check=document.getElementById('fc-'+f);
+        const done=check?.classList.contains('on')||false;
+        const fechaInput=document.getElementById('fc-fecha-'+f);
+        const fechaFase=fechaInput?.value||'';
+        if(!e.fases[f]) e.fases[f]={done:false,fecha:'',trabajador:''};
+        e.fases[f].done=done;
+        if(done && fechaFase) e.fases[f].fecha=fechaFase;
+      });
+    }
+    save(); closeModal('exp'); selId=editId; render(); renderDetail();
+    return;
+  }
+  let ref;
+  if(_refMode==='manual'){
+    ref=document.getElementById('f-ref-manual').value.trim();
+    if(!ref){alert('Escribe la referencia del expediente.');return;}
+  } else {
+    const year=new Date().getFullYear();
+    ref=[year,siguienteNumero(),tipo,formatearCliente(cliente)].join('_');
+  }
+  const adjud=document.getElementById('f-adjud').value;
+  const worker=document.getElementById('f-worker').value;
+  const fasesList=TIPOS_CONFIG[tipo]?.fases||null;
+  const fases={};
+  if(fasesList){
+    fasesList.forEach(f=>{
+      const check=document.getElementById('fc-'+f);
+      const done=check?.classList.contains('on')||false;
+      const fechaInput=document.getElementById('fc-fecha-'+f);
+      const fechaFase=fechaInput?.value||'';
+      fases[f]={done,fecha:done?fechaFase:'',trabajador:done?worker:''};
+    });
+  }
+  // Default reparto: todo a Santiago
+  const reparto={};
+  const todasFases=fasesList?['Captacion','Responsabilidad',...fasesList.filter(f=>!FASES_SIN_HONORARIOS.includes(f))]:['Captacion','Responsabilidad'];
+  todasFases.forEach(f=>reparto[f]='Santiago');
+
+  DB.expedientes.push({
+    id:Date.now(),ref,tipo,cliente,trabajo,trabajador:worker,
+    fechaContacto:document.getElementById('f-contacto').value,
+    fechaPresupuesto:document.getElementById('f-presu').value,
+    fechaAdjudicacion:adjud,
+    honorarios:parseFloat(document.getElementById('f-honorarios').value)||0,
+    visadoCoste:parseFloat(document.getElementById('f-visado-coste').value)||0,
+    notas:document.getElementById('f-notas').value,
+    fechaEntrega:'',faseUnica:!fasesList,fechaFaseUnica:'',
+    fases,reparto
+  });
+  save();closeModal('exp');render();
+}
+
+function guardarCollab(){
+  const nombre=document.getElementById('c-nombre').value.trim();
+  if(!nombre){alert('Escribe el nombre.');return;}
+  const rol=document.getElementById('c-rol').value;
+  const colors=[['#e6f4ee','#1a6b4a'],['#eef2fd','#1e4fd8'],['#fdf4e0','#9a6800'],['#f0eefe','#5b3dbf'],['#fef0e6','#c9560a'],['#fdecea','#a32d2d']];
+  const color=colors[DB.colaboradores.length%colors.length];
+  DB.colaboradores.push({id:Date.now(),nombre,rol,color,fijos:{},porcentajes:{},porcentajeExtra:0});
+  save();closeModal('collab');renderColaboradores();updateBadges();
+}
+
+// -- FASES --
+function openFaseModal(expId,fase){
+  const e=DB.expedientes.find(x=>x.id===expId);if(!e)return;
+  const fs=fasesDeExp(e);
+  const idx=fs?fs.indexOf(fase):-1;
+  const prev=idx>0?fs[idx-1]:null;
+  _faseExpId=expId;_faseFase=fase;
+  document.getElementById('fm-desde').textContent=prev||'Inicio';
+  document.getElementById('fm-hasta').textContent=fase;
+  document.getElementById('fm-fecha').value=todayISO();
+  document.getElementById('overlay-fase').classList.add('on');
+}
+function closeModal_fase(){document.getElementById('overlay-fase').classList.remove('on');_faseExpId=null;_faseFase=null;}
+function confirmarFase(){
+  const e=DB.expedientes.find(x=>x.id===_faseExpId);if(!e||!_faseFase)return;
+  const fecha=document.getElementById('fm-fecha').value||todayISO();
+  e.fases[_faseFase]={done:true,fecha,trabajador:e.trabajador||''};
+  save();document.getElementById('overlay-fase').classList.remove('on');
+  _faseExpId=null;_faseFase=null;
+  renderDetail();renderExpedientes();updateBadges();
+}
+function deshacerFase(evt,expId,fase){
+  evt.stopPropagation();
+  const e=DB.expedientes.find(x=>x.id===expId);if(!e)return;
+  if(!confirm('¿Deshacer la fase '+fase+'?'))return;
+  e.fases[fase]={done:false,fecha:'',trabajador:''};
+  save();renderDetail();renderExpedientes();updateBadges();
+}
+function marcarFaseUnica(expId){
+  const e=DB.expedientes.find(x=>x.id===expId);if(!e)return;
+  const fecha=prompt('Fecha de entrega (AAAA-MM-DD):',todayISO());
+  if(!fecha)return;
+  e.fechaFaseUnica=fecha;
+  save();renderDetail();renderExpedientes();updateBadges();
+}
+function desmarcarFaseUnica(expId){
+  const e=DB.expedientes.find(x=>x.id===expId);if(!e)return;
+  if(!confirm('¿Deshacer la entrega?'))return;
+  e.fechaFaseUnica='';
+  save();renderDetail();renderExpedientes();updateBadges();
+}
+
+// Overlay fase uses confirmarFase directly
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('overlay-fase').addEventListener('click',e=>{
+    if(e.target===document.getElementById('overlay-fase')){document.getElementById('overlay-fase').classList.remove('on');_faseExpId=null;_faseFase=null;}
+  });
+});
+
+// -- EDIT HONORARIOS --
+function openEditEco(expId){
+  const e=DB.expedientes.find(x=>x.id===expId);if(!e)return;
+  document.getElementById('ee-id').value=expId;
+  document.getElementById('ee-honorarios').value=e.honorarios||'';
+  document.getElementById('ee-visado').value=e.visadoCoste||'';
+  document.getElementById('overlay-editeco').classList.add('on');
+}
+function guardarEditEco(){
+  const expId=parseInt(document.getElementById('ee-id').value);
+  const e=DB.expedientes.find(x=>x.id===expId);if(!e)return;
+  e.honorarios=parseFloat(document.getElementById('ee-honorarios').value)||0;
+  e.visadoCoste=parseFloat(document.getElementById('ee-visado').value)||0;
+  save();
+  document.getElementById('overlay-editeco').classList.remove('on');
+  renderDetail();
+}
+
+
+// -- TIPO COLORS --
+// Colores por grupo según dedicación/fases
+// 🔵 AZUL OSCURO — Proyectos completos 7 fases (ONU, REF, REH, NAV, MAC, CUB, LEG, DEM)
+// 🟢 VERDE — Proyectos medios 5 fases (CAT, SEG, DIV, TAS)
+// 🟡 ÁMBAR — Proyectos cortos 2 fases (INF, PLA)
+// 🩶 GRIS — Fase única (resto)
+const GRUPO_COMPLETO = {bg:'#E8EEF8', text:'#1A3A7A', border:'#A8BADE'};  // azul oscuro
+const GRUPO_MEDIO    = {bg:'#E8F4EF', text:'#1A6B4A', border:'#A8D5BC'};  // verde
+const GRUPO_CORTO    = {bg:'#FEF6E4', text:'#8A5F00', border:'#E8C87A'};  // ámbar
+const GRUPO_UNICA    = {bg:'#EEEAE6', text:'#5C534C', border:'#C4BDB6'};  // gris cálido
+
+const TIPO_GRUPO = {
+  ONU:'completo', REF:'completo', REH:'completo', NAV:'completo',
+  MAC:'completo', CUB:'completo', CUV:'completo', LEG:'completo', DEM:'completo',
+  CAT:'medio', SEG:'medio', DIV:'medio', TAS:'medio',
+  INF:'corto', PLA:'corto',
+};
+function tipoColor(tipo){
+  const g=TIPO_GRUPO[tipo];
+  if(g==='completo') return GRUPO_COMPLETO;
+  if(g==='medio')    return GRUPO_MEDIO;
+  if(g==='corto')    return GRUPO_CORTO;
+  return GRUPO_UNICA;
+}
+
+function collabTab(el, tabId){
+  const ficha = el.closest('.collab-ficha');
+  ficha.querySelectorAll('.det-tab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  ficha.querySelectorAll('[id^="ctab-"]').forEach(t=>t.style.display='none');
+  const t=document.getElementById(tabId);if(t)t.style.display='block';
+}
+function resetAnyo(id){ document.getElementById('eco-anyo-'+id).value=''; }
+function resetRangoDates(id){ document.getElementById('eco-desde-'+id).value=''; document.getElementById('eco-hasta-'+id).value=''; }
+
+// -- EXPORT / IMPORT --
+function exportarDatos(){
+  const json=JSON.stringify(DB,null,2);
+  const blob=new Blob([json],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const fecha=new Date().toISOString().slice(0,10);
+  a.href=url;
+  a.download='archidesk_backup_'+fecha+'.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importarDatos(input){
+  const file=input.files[0];if(!file)return;
+  if(!confirm('¿Importar datos desde "'+file.name+'"? Los datos actuales se reemplazarán.'))return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const imported=JSON.parse(e.target.result);
+      if(!imported.expedientes||!imported.colaboradores){
+        alert('El archivo no parece un backup válido de archidesk.');return;
+      }
+      DB=imported;
+      save();
+      render();
+      alert('✓ Datos importados correctamente. '+DB.expedientes.length+' expedientes cargados.');
+    }catch(err){
+      alert('Error al leer el archivo: '+err.message);
+    }
+  };
+  reader.readAsText(file);
+  input.value='';
+}
+
+// -- EDITAR EXPEDIENTE --
+function editarExpediente(id){
+  const e = DB.expedientes.find(x=>x.id===id);
+  if(!e) return;
+  buildExpModal();
+  // Switch to edit mode
+  document.getElementById('f-edit-id').value = id;
+  document.getElementById('modal-exp-title').innerHTML = 'Editar <span>expediente</span>';
+  document.getElementById('btn-guardar-exp').textContent = 'Guardar cambios';
+
+  // Fill tipo
+  document.getElementById('f-tipo').value = e.tipo;
+  onTipoChange();
+
+  // Fill ref - detect mode
+  if(e.ref) {
+    // Check if ref matches auto format
+    const autoRef = [new Date().getFullYear(), e.ref.split('_')[1], e.tipo, formatearCliente(e.cliente||'')].join('_');
+    setRefMode('manual');
+    document.getElementById('f-ref-manual').value = e.ref;
+  }
+
+  // Fill other fields
+  document.getElementById('f-cliente').value = e.cliente||'';
+  document.getElementById('f-trabajo').value = e.trabajo||'';
+  document.getElementById('f-worker').value = e.trabajador||'';
+  document.getElementById('f-contacto').value = e.fechaContacto||'';
+  document.getElementById('f-presu').value = e.fechaPresupuesto||'';
+  document.getElementById('f-adjud').value = e.fechaAdjudicacion||'';
+  document.getElementById('f-honorarios').value = e.honorarios||'';
+  document.getElementById('f-visado-coste').value = e.visadoCoste||'';
+  document.getElementById('f-notas').value = e.notas||'';
+
+  // Fill completed fases
+  const fasesList = TIPOS_CONFIG[e.tipo]?.fases||null;
+  if(fasesList && e.fases){
+    fasesList.forEach(f=>{
+      const fd = e.fases[f];
+      if(fd?.done){
+        const check = document.getElementById('fc-'+f);
+        if(check && !check.classList.contains('on')) toggleFc2(f, e.tipo);
+        const fechaInput = document.getElementById('fc-fecha-'+f);
+        if(fechaInput && fd.fecha) fechaInput.value = fd.fecha;
+      }
+    });
+  }
+
+  // Update eco preview
+  actualizarEco();
+  document.getElementById('overlay-exp').classList.add('on');
+}
+
+function renderHistorialContratos(collabId){
+  const c = DB.colaboradores.find(x=>x.id===collabId); if(!c) return;
+  const contratos = (c.contratos||[]).sort((a,b)=>new Date(b.fechaDesde)-new Date(a.fechaDesde));
+  const [bg,fc] = c.color||['#eeece7','#5a5852'];
+
+  const filas = contratos.map(ct=>{
+    const fijosStr = Object.entries(ct.fijos||{}).filter(([k,v])=>v>0).map(([k,v])=>`${k}: ${fmtEuro(v)}`).join(', ')||'—';
+    return `<div style="background:var(--bg);border:1px solid ${ct.activo?'var(--accent)':'var(--border)'};border-radius:var(--radius);padding:14px 16px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-size:13px;font-weight:700;color:${ct.activo?'var(--accent)':'var(--text2)'}">${ct.activo?'✓ Contrato vigente':'Contrato anterior'}</div>
+        <div style="font-size:11px;color:var(--text3)">${fmtF(ct.fechaDesde)} → ${ct.fechaHasta?fmtF(ct.fechaHasta):'actualidad'}</div>
+      </div>
+      <div style="font-size:12px;color:var(--text2)">Fijos: ${fijosStr}</div>
+      ${ct.notas?`<div style="font-size:11px;color:var(--text3);margin-top:4px;font-style:italic">${ct.notas}</div>`:''}
+    </div>`;
+  }).join('') || '<div class="empty">Sin historial de contratos</div>';
+
+  document.getElementById('hist-body-'+collabId).innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div class="sec-title">Historial de condiciones</div>
+      <button class="btn-save" onclick="openNuevoContrato(${collabId})">+ Nuevo contrato</button>
+    </div>
+    ${filas}`;
+}
+
+function openNuevoContrato(collabId){
+  const c = DB.colaboradores.find(x=>x.id===collabId); if(!c) return;
+  document.getElementById('nc-collab-id').value = collabId;
+  document.getElementById('nc-nombre').textContent = c.nombre;
+  document.getElementById('nc-fecha').value = todayISO();
+  document.getElementById('nc-notas').value = '';
+  // Fill fijos from current active contract
+  const actual = getContratoActivo(c, null);
+  const tiposList = Object.keys(TIPOS_CONFIG);
+  document.getElementById('nc-fijos-body').innerHTML = tiposList.map(t=>{
+    const val = actual?.fijos?.[t]||'';
+    return `<div class="cond-row">
+      <span class="cond-name">${t} — ${TIPOS_CONFIG[t].desc}</span>
+      <div style="display:flex;align-items:center;gap:4px">
+        <input class="cond-input" type="number" placeholder="0" value="${val}" id="nc-fijo-${t}">
+        <span class="cond-unit">€ fijo</span>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('overlay-nuevo-contrato').classList.add('on');
+}
+
+function guardarNuevoContrato(){
+  const collabId = parseInt(document.getElementById('nc-collab-id').value);
+  const fechaDesde = document.getElementById('nc-fecha').value;
+  const notas = document.getElementById('nc-notas').value;
+  if(!fechaDesde){alert('Indica la fecha desde la que aplica el contrato.');return;}
+
+  const fijos = {};
+  Object.keys(TIPOS_CONFIG).forEach(t=>{
+    const v = parseFloat(document.getElementById('nc-fijo-'+t)?.value)||0;
+    if(v>0) fijos[t]=v;
+  });
+
+  const updated = aplicarNuevoContrato(collabId, {fechaDesde, fijos, porcentajes:{}, notas});
+  document.getElementById('overlay-nuevo-contrato').classList.remove('on');
+
+  const c = DB.colaboradores.find(x=>x.id===collabId);
+  alert(`✓ Nuevo contrato guardado para ${c.nombre} desde ${fmtF(fechaDesde)}.\n${updated} expediente${updated!==1?'s':''} actualizado${updated!==1?'s':''}.`);
+  renderHistorialContratos(collabId);
+  renderColaboradores();
+}
+
+// -- CONTRATOS COLABORADORES --
+function getContratoActivo(collab, fecha){
+  if(!collab) return null;
+  // If has contratos array, use it
+  if(collab.contratos&&collab.contratos.length>0){
+    const d = fecha ? new Date(fecha) : new Date();
+    const valid = collab.contratos.filter(c=>{
+      const desde = new Date(c.fechaDesde);
+      const hasta = c.fechaHasta ? new Date(c.fechaHasta) : null;
+      return desde <= d && (!hasta || hasta >= d);
+    });
+    const found = valid.sort((a,b)=>new Date(b.fechaDesde)-new Date(a.fechaDesde))[0];
+    if(found) return found;
+  }
+  // Fallback: use collab.fijos directly
+  if(collab.fijos) return {fijos: collab.fijos, porcentajes: collab.porcentajes||{}};
+  return null;
+}
+
+function aplicarNuevoContrato(collabId, nuevoContrato){
+  const c = DB.colaboradores.find(x=>x.id===collabId); if(!c) return;
+  if(!c.contratos) c.contratos=[];
+  const fechaDesde = nuevoContrato.fechaDesde;
+
+  // Close previous active contract
+  c.contratos.forEach(ct=>{
+    if(ct.activo && (!ct.fechaHasta || new Date(ct.fechaHasta) >= new Date(fechaDesde))){
+      ct.fechaHasta = fechaDesde;
+      ct.activo = false;
+    }
+  });
+
+  // Add new contract
+  nuevoContrato.id = Date.now();
+  nuevoContrato.activo = true;
+  nuevoContrato.fechaHasta = null;
+  c.contratos.push(nuevoContrato);
+
+  // Update expedientes from fechaDesde onwards
+  let updated = 0;
+  DB.expedientes.forEach(e=>{
+    const fechaRef = e.fechaAdjudicacion || e.fechaContacto;
+    if(!fechaRef || new Date(fechaRef) < new Date(fechaDesde)) return;
+    // Update reparto for this colaborador's phases
+    // (keep other colaboradores' assignments unchanged)
+    updated++;
+  });
+
+  save();
+  return updated;
+}
+
+function togglePago(expId, collab){
+  const e=DB.expedientes.find(x=>x.id===expId); if(!e)return;
+  if(!e.pagos)e.pagos={};
+  e.pagos[collab]=!e.pagos[collab];
+  save();
+  const t=document.getElementById('det-eco');
+  if(t&&t.style.display!=='none')t.innerHTML=renderEcoTab(e);
+}
+function togglePagoFase(expId, fase){
+  const e=DB.expedientes.find(x=>x.id===expId); if(!e)return;
+  if(!e.pagos)e.pagos={};
+  e.pagos[fase]=!e.pagos[fase];
+  save();
+  const t=document.getElementById('det-eco');
+  if(t&&t.style.display!=='none')t.innerHTML=renderEcoTab(e);
+}
+
+// -- BORRAR EXPEDIENTE --
+function borrarExpediente(id){
+  const e = DB.expedientes.find(x=>x.id===id);
+  if(!e) return;
+  // Primera confirmación
+  if(!confirm('¿Borrar el expediente "'+e.ref+'"?\n\nEsta acción no se puede deshacer.')) return;
+  // Segunda confirmación
+  if(!confirm('⚠️ SEGUNDA CONFIRMACIÓN\n\n¿Seguro que quieres borrar "'+e.ref+'"?\nSe eliminarán todos sus datos, fases y honorarios.')) return;
+  DB.expedientes = DB.expedientes.filter(x=>x.id!==id);
+  selId = null;
+  document.getElementById('det-container').innerHTML='';
+  save();
+  render();
+}
+
+// -- INIT --
+(async function(){
+  // Populate tipo filter dropdown on load
+  const filtro = document.getElementById('filtro-tipo');
+  filtro.innerHTML = '<option value="">Todos los tipos</option>';
+  Object.entries(TIPOS_CONFIG).forEach(([k,v]) => {
+    filtro.innerHTML += `<option value="${k}">${k} — ${v.desc}</option>`;
+  });
+
+  document.getElementById('sync-status').textContent='☁️ Cargando datos...';
+  document.getElementById('sync-status').style.color='var(--amber)';
+  await loadFromCloud();
+  render();
+})();
+setInterval(()=>{if(curView==='expedientes')renderExpedientes();},60000);
+setInterval(saveToCloud,5*60*1000); // auto-save every 5 min
+</script>
+
+<!-- MODAL EDITAR HONORARIOS -->
+<div class="overlay" id="overlay-editeco" onclick="if(event.target===this)this.classList.remove('on')">
+<div class="modal modal-sm">
+  <div class="modal-title">Editar <span>honorarios</span></div>
+  <input type="hidden" id="ee-id">
+  <div class="fg"><label>Honorarios pactados (€)</label><input type="number" id="ee-honorarios" placeholder="0"></div>
+  <div class="fg"><label>Coste visado (€)</label><input type="number" id="ee-visado" placeholder="0"></div>
+  <div class="modal-actions">
+    <button class="btn-cancel" onclick="document.getElementById('overlay-editeco').classList.remove('on')">Cancelar</button>
+    <button class="btn-save" onclick="guardarEditEco()">Guardar</button>
+  </div>
+</div>
+</div>
+
+<!-- MODAL NUEVO CONTRATO -->
+<div class="overlay" id="overlay-nuevo-contrato" onclick="if(event.target===this)this.classList.remove('on')">
+<div class="modal" style="width:580px;max-height:85vh">
+  <div class="modal-title">Nuevo <span>contrato</span> — <span id="nc-nombre"></span></div>
+  <input type="hidden" id="nc-collab-id">
+  <div class="fg">
+    <label>Fecha desde la que aplica</label>
+    <input type="date" id="nc-fecha">
+    <div style="font-size:11px;color:var(--amber);margin-top:4px;background:var(--amber-light);padding:6px 10px;border-radius:6px">⚠️ Se actualizarán automáticamente todos los expedientes adjudicados desde esta fecha</div>
+  </div>
+  <div class="fg">
+    <label>Importes fijos por tipo de proyecto</label>
+    <div id="nc-fijos-body" style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px"></div>
+  </div>
+  <div class="fg">
+    <label>Notas del contrato</label>
+    <input id="nc-notas" placeholder="Ej: Subida de tarifas acordada en reunión de mayo">
+  </div>
+  <div class="modal-actions">
+    <button class="btn-cancel" onclick="document.getElementById('overlay-nuevo-contrato').classList.remove('on')">Cancelar</button>
+    <button class="btn-save" onclick="guardarNuevoContrato()">Guardar contrato</button>
+  </div>
+</div>
+</div>
+</body>
+</html>
