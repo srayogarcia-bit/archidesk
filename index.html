@@ -545,20 +545,32 @@ async function saveToCloud(){
 
 async function loadFromCloud(){
   setSyncStatus('saving');
+  // First load localStorage as immediate fallback
+  let localDB = null;
+  try{
+    const raw=localStorage.getItem('archidesk_data');
+    if(raw) localDB=JSON.parse(raw);
+  }catch(e){}
+
   try{
     const resp=await fetch(SCRIPT_URL+'?action=load');
     const json=await resp.json();
     if(json.ok&&json.data&&json.data.expedientes){
-      DB=json.data;
+      // Use whichever has more expedientes (most up to date)
+      if(localDB && localDB.expedientes && 
+         localDB.expedientes.length >= json.data.expedientes.length){
+        DB=localDB;
+        // Sync local to cloud since it's more up to date
+        saveToCloud();
+      } else {
+        DB=json.data;
+      }
       setSyncStatus('ok');
       return true;
     }
   }catch(e){}
   // Fallback to localStorage
-  try{
-    const raw=localStorage.getItem('archidesk_data');
-    if(raw){DB=JSON.parse(raw);setSyncStatus('ok');return true;}
-  }catch(e){}
+  if(localDB){DB=localDB;setSyncStatus('ok');return true;}
   setSyncStatus('ok');
   return false;
 }
@@ -1924,7 +1936,9 @@ function borrarExpediente(id){
   DB.expedientes = DB.expedientes.filter(x=>x.id!==id);
   selId = null;
   document.getElementById('det-container').innerHTML='';
-  save();
+  // Guardar inmediatamente en local Y en la nube sin debounce
+  try{localStorage.setItem('archidesk_data',JSON.stringify(DB));}catch(e){}
+  saveToCloud();
   render();
 }
 
@@ -1972,17 +1986,4 @@ setInterval(saveToCloud,5*60*1000); // auto-save every 5 min
   </div>
   <div class="fg">
     <label>Importes fijos por tipo de proyecto</label>
-    <div id="nc-fijos-body" style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px"></div>
-  </div>
-  <div class="fg">
-    <label>Notas del contrato</label>
-    <input id="nc-notas" placeholder="Ej: Subida de tarifas acordada en reunión de mayo">
-  </div>
-  <div class="modal-actions">
-    <button class="btn-cancel" onclick="document.getElementById('overlay-nuevo-contrato').classList.remove('on')">Cancelar</button>
-    <button class="btn-save" onclick="guardarNuevoContrato()">Guardar contrato</button>
-  </div>
-</div>
-</div>
-</body>
-</html>
+    <div id="nc-fijos-body" style="max
