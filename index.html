@@ -453,38 +453,60 @@ textarea{resize:vertical;min-height:70px}
 // CONFIGURACIÓN DE FASES POR TIPO
 //
 const TIPOS_CONFIG = {
-  ONU:{desc:'Obra nueva',fases:['LEVANTAMIENTO','PROPUESTA','PLANOS','MEDICIONES','MEMORIA','VISADO','ENTREGA']},
-  REF:{desc:'Reforma',fases:['LEVANTAMIENTO','PROPUESTA','PLANOS','MEDICIONES','MEMORIA','VISADO','ENTREGA']},
-  REH:{desc:'Rehabilitación',fases:['LEVANTAMIENTO','PROPUESTA','PLANOS','MEDICIONES','MEMORIA','VISADO','ENTREGA']},
-  NAV:{desc:'Nave',fases:['LEVANTAMIENTO','PROPUESTA','PLANOS','MEDICIONES','MEMORIA','VISADO','ENTREGA']},
-  MAC:{desc:'Memoria de actividad',fases:['LEVANTAMIENTO','PROPUESTA','PLANOS','MEDICIONES','MEMORIA','VISADO','ENTREGA']},
-  CUB:{desc:'Cubierta',fases:['LEVANTAMIENTO','PROPUESTA','PLANOS','MEDICIONES','MEMORIA','VISADO','ENTREGA']},
-  CUV:{desc:'Cubierta visada',fases:['LEVANTAMIENTO','PROPUESTA','PLANOS','MEDICIONES','MEMORIA','VISADO','ENTREGA']},
-  LEG:{desc:'Legalización',fases:['LEVANTAMIENTO','PROPUESTA','PLANOS','MEDICIONES','MEMORIA','VISADO','ENTREGA']},
-  DEM:{desc:'Demolición',fases:['LEVANTAMIENTO','PROPUESTA','PLANOS','MEDICIONES','MEMORIA','VISADO','ENTREGA']},
-  CAT:{desc:'Catastro',fases:['LEVANTAMIENTO','PLANOS','MEMORIA','ENTREGA','REGISTRO']},
-  SEG:{desc:'Segregación',fases:['LEVANTAMIENTO','PLANOS','MEMORIA','ENTREGA','REGISTRO']},
-  DIV:{desc:'División',fases:['LEVANTAMIENTO','PLANOS','MEMORIA','ENTREGA','REGISTRO']},
-  TAS:{desc:'Tasación',fases:null},
-  INF:{desc:'Informes',fases:['LEVANTAMIENTO','PLANOS']},
-  PLA:{desc:'Planos',fases:['LEVANTAMIENTO','PLANOS']},
-  PSS:{desc:'Plan de seguridad y salud',fases:null},
-  LEV:{desc:'Levantamiento',fases:null},
-  MED:{desc:'Mediciones',fases:null},
-  DEO:{desc:'Dirección ejecución obra (aparejador)',fases:null},
-  DOB:{desc:'Dirección de obras (Arquitecto)',fases:null},
-  CSS:{desc:'Coordinación Seguridad y Salud',fases:null},
-  CHA:{desc:'Cédulas habitabilidad',fases:null},
-  ESC:{desc:'Escaneado',fases:null},
-  CEI:{desc:'Certificado inmueble',fases:null},
-  SOL:{desc:'Solicitud',fases:null},
-  VAL:{desc:'Valoraciones recursos hacienda',fases:null},
-  SUB:{desc:'Subvención',fases:null},
-  CFO:{desc:'Certificado final de obra',fases:null},
-  OME:{desc:'Tramitación obras menores',fases:null},
-  LDE:{desc:'Libro del edificio',fases:null},
-  CEE:{desc:'Certificado energético',fases:null},
-  PLN:{desc:'Planeamiento urbanismo',fases:null},
+  // 7 FASES: LEV → PROPUESTA → PLANOS → MEDICIONES → MEMORIA → VISADO → ENTREGA
+  ONU:{desc:'Obra nueva',                       fases:['LEVANTAMIENTO','PROPUESTA','PLANOS','MEDICIONES','MEMORIA','VISADO','ENTREGA']},
+  REF:{desc:'Reforma',                          fases:['LEVANTAMIENTO','PROPUESTA','PLANOS','MEDICIONES','MEMORIA','VISADO','ENTREGA']},
+  REH:{desc:'Rehabilitación',                   fases:['LEVANTAMIENTO','PROPUESTA','PLANOS','MEDICIONES','MEMORIA','VISADO','ENTREGA']},
+  NAV:{desc:'Nave',                             fases:['LEVANTAMIENTO','PROPUESTA','PLANOS','MEDICIONES','MEMORIA','VISADO','ENTREGA']},
+  MAC:{desc:'Memoria de actividad',             fases:['LEVANTAMIENTO','PROPUESTA','PLANOS','MEDICIONES','MEMORIA','VISADO','ENTREGA']},
+  CUV:{desc:'Cubierta visada',                  fases:['LEVANTAMIENTO','PROPUESTA','PLANOS','MEDICIONES','MEMORIA','VISADO','ENTREGA']},
+  // 6 FASES: LEV → PROPUESTA → PLANOS → MEM+MED → VISADO → ENTREGA
+  LEG:{desc:'Legalización',                     fases:['LEVANTAMIENTO','PROPUESTA','PLANOS','MEMORIA Y MEDICIONES','VISADO','ENTREGA']},
+  // 5 FASES: LEV → PLANOS → MEDICIONES → MEMORIA → ENTREGA
+  CUB:{desc:'Cubierta',                         fases:['LEVANTAMIENTO','PLANOS','MEDICIONES','MEMORIA','ENTREGA']},
+  DEM:{desc:'Demolición',                       fases:['LEVANTAMIENTO','PLANOS','MEDICIONES','MEMORIA','ENTREGA']},
+  DEV:{desc:'Demolición visada',                fases:['LEVANTAMIENTO','PLANOS','MEDICIONES','MEMORIA','VISADO','ENTREGA']},
+  // 5 FASES: LEV → PLANOS → MEMORIA → REGISTRO → ENTREGA
+  CAT:{desc:'Catastro',                         fases:['LEVANTAMIENTO','PLANOS','MEMORIA','REGISTRO','ENTREGA']},
+  SEG:{desc:'Segregación',                      fases:['LEVANTAMIENTO','PLANOS','MEMORIA','REGISTRO','ENTREGA']},
+  DIV:{desc:'División',                         fases:['LEVANTAMIENTO','PLANOS','MEMORIA','REGISTRO','ENTREGA']},
+  // 2 FASES
+  PLA:{desc:'Planos',                           fases:['LEVANTAMIENTO','PLANOS']},
+  ESC:{desc:'Escaneado',                        fases:['ESCANEO','PROCESADO']},
+  // FASE ÚNICA
+  INF:{desc:'Informes',                         fases:null},
+  CHA:{desc:'Cédulas habitabilidad',            fases:null},
+  CFO:{desc:'Certificado final de obra',        fases:null},
+  OME:{desc:'Tramitación obras menores',        fases:null},
+  CEE:{desc:'Certificado energético',           fases:null},
+  PSS:{desc:'Plan de seguridad y salud',        fases:null},
+  TAS:{desc:'Tasación',                         fases:null},
+  LEV:{desc:'Levantamiento',                    fases:null},
+  MED:{desc:'Mediciones',                       fases:null},
+  CEI:{desc:'Certificado inmueble',             fases:null},
+  SOL:{desc:'Solicitud',                        fases:null},
+  VAL:{desc:'Valoraciones recursos hacienda',   fases:null},
+  SUB:{desc:'Subvención',                       fases:null},
+  PLN:{desc:'Planeamiento urbanismo',           fases:null},
+  DEO:{desc:'Dirección ejecución obra',         fases:null},
+  DOB:{desc:'Dirección de obras (Arquitecto)',  fases:null},
+  CSS:{desc:'Coordinación Seguridad y Salud',   fases:null},
+  PLAN:{desc:'Planimetría',                     fases:null},
+};
+
+// Sistema de cobro por tipo
+const SISTEMA_COBRO = {
+  // Por fases (captación, responsabilidad + fases de trabajo)
+  ONU:'fases', REF:'fases', REH:'fases', LEG:'fases',
+  // Tarifa plana (importe fijo del colaborador)
+  NAV:'plana', MAC:'plana', CUB:'plana', CUV:'plana', CFO:'plana',
+  // 50/50 si lo hace Fran (50% Fran, 50% Santi)
+  INF:'50', CHA:'50', OME:'50', CEE:'50', PSS:'50', TAS:'50',
+  LEV:'50', MED:'50', ESC:'50', DEM:'50', DEV:'50', CAT:'50',
+  SEG:'50', CEI:'50', SOL:'50', VAL:'50', DIV:'50', SUB:'50',
+  PLA:'50',
+  // Solo Santiago
+  PLN:'santi', DEO:'santi', DOB:'santi', CSS:'santi', PLAN:'santi',
 };
 
 // Porcentajes fijos por fase (sobre el resto = honorarios - visado)
@@ -503,7 +525,7 @@ const PORCENTAJES_FASE = {
 const FASES_SIN_HONORARIOS = ['VISADO','ENTREGA','REGISTRO'];
 
 // Tipos con tarifa plana (colaborador cobra importe fijo, resto a Santiago)
-const TIPOS_TARIFA_PLANA = ['CUB','CUV','NAV','MAC'];
+const TIPOS_TARIFA_PLANA = ['NAV','MAC','CUB','CUV','CFO'];
 
 //
 // DATOS INICIALES
@@ -895,7 +917,10 @@ function renderEcoTab(e){
 
   const fs=fasesDeExp(e);
   const collabNames=DB.colaboradores.map(c=>c.nombre);
-  const isTarifaPlana = TIPOS_TARIFA_PLANA.includes(e.tipo);
+  const sistemaCobro = SISTEMA_COBRO[e.tipo] || '50';
+  const isTarifaPlana = sistemaCobro === 'plana';
+  const isSoloSanti = sistemaCobro === 'santi';
+  const is5050 = sistemaCobro === '50';
 
   let repartoHTML = '';
   let resumenCards = '';
@@ -946,6 +971,67 @@ function renderEcoTab(e){
         <div style="font-size:11px;font-weight:700;color:${fc};text-transform:uppercase;letter-spacing:.05em">${n}</div>
         <div style="font-size:22px;font-weight:700;color:${fc};margin-top:6px;font-family:'Courier New',monospace">${fmtEuro(tot)}</div>
         <div style="font-size:11px;color:${fc};opacity:.7;margin-top:2px">${resto>0?((tot/resto)*100).toFixed(1)+'% del neto':''}</div>
+      </div>`;
+    }).join('');
+
+  } else if(isSoloSanti) {
+    // Solo Santiago - sin colaboradores
+    repartoHTML = `<div class="fase-unica-box" style="text-align:left;padding:14px 16px">
+      <div style="font-size:13px;font-weight:700;color:var(--text2)">Trabajo exclusivo de Santiago</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:4px">Este tipo de trabajo no se comparte con colaboradores</div>
+      <div style="margin-top:12px;font-size:20px;font-weight:700;color:var(--accent)">${fmtEuro(resto)}</div>
+      <div style="font-size:11px;color:var(--text3)">Íntegro para Santiago</div>
+    </div>`;
+    resumenCards = collabNames.filter(n=>n==='Santiago').map(n=>{
+      const [bg,fc]=wc(n);
+      return `<div class="rc-card" style="background:${bg};border-color:${fc}30">
+        <div style="font-size:11px;font-weight:700;color:${fc};text-transform:uppercase">${n}</div>
+        <div style="font-size:22px;font-weight:700;color:${fc};margin-top:6px;font-family:'Courier New',monospace">${fmtEuro(resto)}</div>
+      </div>`;
+    }).join('');
+
+  } else if(is5050) {
+    // 50/50: si lo hace Fran cobra 50%, si lo hace Santiago cobra todo
+    if(!e.pagos) e.pagos={};
+    const ejecuta = e.reparto?.ejecuta || 'Santiago';
+    const selOpts = collabNames.map(n=>`<option value="${n}" ${n===ejecuta?'selected':''}>${n}</option>`).join('');
+    const importeFran = ejecuta !== 'Santiago' ? resto * 0.5 : 0;
+    const importeSanti = resto - importeFran;
+    const cobradoFran = e.pagos?.['fran50']||false;
+
+    repartoHTML = `
+      <div class="sec-title" style="margin-bottom:8px">Reparto 50/50</div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:8px">¿Quién ejecuta este trabajo?</div>
+        <select class="collab-sel" onchange="cambiarEjecuta(${e.id},this.value)" style="max-width:200px">${selOpts}</select>
+        <div style="font-size:11px;color:var(--text3);margin-top:6px">Si lo hace un colaborador cobra el 50% de los honorarios netos</div>
+      </div>
+      <table class="reparto-table">
+        <thead><tr><th>Persona</th><th>Concepto</th><th>Importe</th><th>Estado</th></tr></thead>
+        <tbody>
+          ${importeFran>0?`<tr>
+            <td><span class="worker-pill"><span class="worker-dot" style="background:${wc(ejecuta)[1]}"></span>${ejecuta}</span></td>
+            <td style="font-size:12px;color:var(--text2)">50% honorarios netos</td>
+            <td style="font-family:'Courier New',monospace;font-weight:700;color:#1A6B4A">${fmtEuro(importeFran)}</td>
+            <td><button onclick="togglePago(${e.id},'fran50')" style="padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;font-family:var(--font);cursor:pointer;border:1px solid ${cobradoFran?'#1A6B4A':'var(--border2)'};background:${cobradoFran?'#E8F4EF':'var(--bg)'};color:${cobradoFran?'#1A6B4A':'var(--text3)'}">
+              ${cobradoFran?'✓ Cobrado':'Pendiente'}
+            </button></td>
+          </tr>`:''}
+          <tr style="background:var(--accent-light)">
+            <td><span class="mia-badge">Santiago</span></td>
+            <td style="font-size:12px;color:var(--text2)">${importeFran>0?'50% restante':'100% — lo hace Santiago'}</td>
+            <td style="font-family:'Courier New',monospace;font-weight:700;color:#1A6B4A">${fmtEuro(importeSanti)}</td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>`;
+
+    resumenCards = collabNames.filter(n=>n==='Santiago'||(importeFran>0&&n===ejecuta)).map(n=>{
+      const [bg,fc]=wc(n);
+      const tot=n==='Santiago'?importeSanti:importeFran;
+      return `<div class="rc-card" style="background:${bg};border-color:${fc}30">
+        <div style="font-size:11px;font-weight:700;color:${fc};text-transform:uppercase">${n}</div>
+        <div style="font-size:22px;font-weight:700;color:${fc};margin-top:6px;font-family:'Courier New',monospace">${fmtEuro(tot)}</div>
       </div>`;
     }).join('');
 
@@ -1042,6 +1128,15 @@ function renderEcoTab(e){
     <div class="resumen-collab">${resumenCards}</div>`;
 }
 
+function cambiarEjecuta(expId, quien){
+  const e=DB.expedientes.find(x=>x.id===expId); if(!e)return;
+  if(!e.reparto)e.reparto={};
+  e.reparto.ejecuta=quien;
+  save();
+  const t=document.getElementById('det-eco');
+  if(t&&t.style.display!=='none')t.innerHTML=renderEcoTab(e);
+}
+
 function cambiarReparto(expId,fase,quien){
   const e=DB.expedientes.find(x=>x.id===expId);if(!e)return;
   if(!e.reparto)e.reparto={};
@@ -1109,7 +1204,10 @@ function calcEcoCollab(collabNombre, desde, hasta){
       if(hasta && adjDate > new Date(hasta)) return;
     }
 
-    const isTarifaPlana = TIPOS_TARIFA_PLANA.includes(e.tipo);
+    const sistemaCobro = SISTEMA_COBRO[e.tipo] || '50';
+  const isTarifaPlana = sistemaCobro === 'plana';
+  const isSoloSanti = sistemaCobro === 'santi';
+  const is5050 = sistemaCobro === '50';
     let totalCollab = 0;
     let cobradoCollab = 0;
 
@@ -1132,6 +1230,20 @@ function calcEcoCollab(collabNombre, desde, hasta){
           totalCollab = fijo;
           cobradoCollab = (e.pagos?.[collabNombre]||false) ? fijo : 0;
         }
+      }
+    } else if(sistemaCobro === 'santi') {
+      if(collabNombre === 'Santiago'){
+        totalCollab = resto;
+        cobradoCollab = (e.pagos?.['santi_cobrado']||false) ? resto : 0;
+      }
+    } else if(sistemaCobro === '50') {
+      const ejecuta = e.reparto?.ejecuta || 'Santiago';
+      if(collabNombre === 'Santiago'){
+        totalCollab = ejecuta === 'Santiago' ? resto : resto * 0.5;
+        cobradoCollab = totalCollab; // Santiago siempre cobra
+      } else if(collabNombre === ejecuta) {
+        totalCollab = resto * 0.5;
+        cobradoCollab = (e.pagos?.['fran50']||false) ? totalCollab : 0;
       }
     } else {
       // Reparto por fases
@@ -1684,17 +1796,21 @@ const GRUPO_CORTO    = {bg:'#FEF6E4', text:'#8A5F00', border:'#E8C87A'};  // ám
 const GRUPO_UNICA    = {bg:'#EEEAE6', text:'#5C534C', border:'#C4BDB6'};  // gris cálido
 
 const TIPO_GRUPO = {
-  ONU:'completo', REF:'completo', REH:'completo', NAV:'completo',
-  MAC:'completo', CUB:'completo', CUV:'completo', LEG:'completo', DEM:'completo',
-  CAT:'medio', SEG:'medio', DIV:'medio', TAS:'medio',
-  INF:'corto', PLA:'corto',
+  // Azul oscuro - proyectos por fases con reparto económico complejo
+  ONU:'completo', REF:'completo', REH:'completo', LEG:'completo',
+  // Verde - tarifa plana
+  NAV:'plana', MAC:'plana', CUB:'plana', CUV:'plana', CFO:'plana',
+  // Ámbar - 50/50 o fases medias
+  DEM:'medio', DEV:'medio', CAT:'medio', SEG:'medio', DIV:'medio',
+  PLA:'medio', ESC:'medio',
+  // Gris - fase única solo Santi o 50/50 simples
 };
 function tipoColor(tipo){
   const g=TIPO_GRUPO[tipo];
   if(g==='completo') return GRUPO_COMPLETO;
-  if(g==='medio')    return GRUPO_MEDIO;
-  if(g==='corto')    return GRUPO_CORTO;
-  return GRUPO_UNICA;
+  if(g==='plana')    return GRUPO_MEDIO;   // verde = tarifa plana
+  if(g==='medio')    return GRUPO_CORTO;   // ámbar = medio
+  return GRUPO_UNICA;  // gris = fase única
 }
 
 function collabTab(el, tabId){
