@@ -239,7 +239,13 @@ textarea{resize:vertical;min-height:70px}
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.5"/><path d="M8 5v3.5l2 2" stroke-linecap="round"/></svg>
         En progreso <span class="ni-badge" id="badge-prog">0</span>
       </div>
+      <div class="ni" onclick="filtrarFase('__pendiente__')">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 2v4l3 3" stroke-linecap="round"/><circle cx="8" cy="8" r="6.5"/><path d="M5 8h6" stroke-linecap="round" stroke-dasharray="1.5 2"/></svg>
+        Pendientes inicio <span class="ni-badge" id="badge-pend">0</span>
+      </div>
     </div>
+    <div class="sb-sec">Por fase</div>
+    <div id="sb-fases" style="padding:0 8px"></div>
     <div style="padding:8px">
       <div class="ni" onclick="nav('configuracion',this)">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke-linecap="round"/></svg>
@@ -263,6 +269,10 @@ textarea{resize:vertical;min-height:70px}
         <input class="tb-search" placeholder="Buscar..." oninput="buscar(this.value)">
         <select class="filter-sel" onchange="filtrarTipo(this.value)" id="filtro-tipo">
           <option value="">Todos los tipos</option>
+        </select>
+        <select class="filter-sel" onchange="filtrarFase(this.value)" id="filtro-fase">
+          <option value="">Todas las fases</option>
+          <option value="__pendiente__">⏳ Pendientes de inicio</option>
         </select>
       </div>
     </div>
@@ -635,7 +645,7 @@ function loadData(){
 let DB = loadData();
 function save(){ try{localStorage.setItem('archidesk_data',JSON.stringify(DB));}catch(e){} }
 
-let selId=null,selCollab=null,curView='expedientes',searchQ='',tipoQ='';
+let selId=null,selCollab=null,curView='expedientes',searchQ='',tipoQ='',faseQ='';
 let _faseExpId=null,_faseFase=null;
 
 //
@@ -704,19 +714,68 @@ function updateBadges(){
     if(!fs) return !e.fechaFaseUnica;
     return faseActual(e)!==null;
   }).length;
+
+  // Pendientes de inicio
+  const pendientes=DB.expedientes.filter(e=>{
+    if(!e.fechaAdjudicacion) return false;
+    const fs=fasesDeExp(e);
+    if(!fs) return !e.fechaFaseUnica;
+    return !Object.values(e.fases||{}).some(f=>f.done);
+  }).length;
+  const badgePend=document.getElementById('badge-pend');
+  if(badgePend) badgePend.textContent=pendientes;
+
+  // Sidebar fases
+  const faseCounts={};
+  DB.expedientes.forEach(e=>{
+    const fa=faseActual(e);
+    if(fa){faseCounts[fa]=(faseCounts[fa]||0)+1;}
+  });
+  const sbFases=document.getElementById('sb-fases');
+  if(sbFases){
+    const fasesOrden=['LEVANTAMIENTO','PROPUESTA','PLANOS','MEDICIONES','MEMORIA','MEMORIA Y MEDICIONES','VISADO','ENTREGA','REGISTRO','ESCANEO','PROCESADO'];
+    const toShow=[...new Set([...fasesOrden.filter(f=>faseCounts[f]),...Object.keys(faseCounts)])];
+    sbFases.innerHTML=toShow.map(f=>`
+      <div class="ni fase-ni${faseQ===f?' on':''}" data-fase="${f}" onclick="filtrarFase('${f}')">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="2"/><path d="M8 2v2M8 12v2M2 8h2M12 8h2" stroke-linecap="round"/></svg>
+        <span style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f}</span>
+        <span class="ni-badge">${faseCounts[f]}</span>
+      </div>`).join('')+
+      (Object.keys(faseCounts).length?`<div class="ni" style="font-size:11px;color:rgba(255,255,255,.5)" onclick="filtrarFase('')">✕ Quitar filtro fase</div>`:'');
+  }
+
+  // Update fase filter dropdown
+  const filtroFase=document.getElementById('filtro-fase');
+  if(filtroFase){
+    const current=filtroFase.value;
+    filtroFase.innerHTML='<option value="">Todas las fases</option><option value="__pendiente__">⏳ Pendientes de inicio</option>';
+    const fasesOrden=['LEVANTAMIENTO','PROPUESTA','PLANOS','MEDICIONES','MEMORIA','MEMORIA Y MEDICIONES','VISADO','ENTREGA','REGISTRO','ESCANEO','PROCESADO'];
+    const toShow=[...new Set([...fasesOrden.filter(f=>faseCounts[f]),...Object.keys(faseCounts)])];
+    toShow.forEach(f=>{filtroFase.innerHTML+=`<option value="${f}">${f} (${faseCounts[f]})</option>`;});
+    filtroFase.value=current;
+  }
 }
 
 function filtered(){
   return DB.expedientes.filter(e=>{
     const s=searchQ.toLowerCase();
     return(!s||(e.ref+e.trabajo+e.trabajador+(e.cliente||'')).toLowerCase().includes(s))&&(!tipoQ||e.tipo===tipoQ);
+  }).filter(e=>{
+    if(!faseQ) return true;
+    if(faseQ==='__pendiente__'){
+      // Adjudicado pero ninguna fase completada
+      if(!e.fechaAdjudicacion) return false;
+      const fs=fasesDeExp(e);
+      if(!fs) return !e.fechaFaseUnica;
+      return !Object.values(e.fases||{}).some(f=>f.done);
+    }
+    return faseActual(e)===faseQ;
   }).sort((a,b)=>{
-    // Sort by year first, then by expedition number
     const partsA=a.ref.split('_'); const partsB=b.ref.split('_');
     const yearA=parseInt(partsA[0])||0; const yearB=parseInt(partsB[0])||0;
-    if(yearA!==yearB) return yearB-yearA; // most recent year first
+    if(yearA!==yearB) return yearB-yearA;
     const numA=parseInt(partsA[1])||0; const numB=parseInt(partsB[1])||0;
-    return numA-numB; // ascending by number
+    return numA-numB;
   });
 }
 
@@ -1465,6 +1524,17 @@ function nav(v,el){
 function navToExp(id){nav('expedientes');setTimeout(()=>selExp(id),50);}
 function buscar(v){searchQ=v;if(curView==='expedientes')renderExpedientes();}
 function filtrarTipo(v){tipoQ=v;if(curView==='expedientes')renderExpedientes();}
+function filtrarFase(v){
+  faseQ=v;
+  // Sync sidebar selection
+  document.querySelectorAll('.fase-ni').forEach(el=>el.classList.remove('on'));
+  if(v){
+    const el=document.querySelector('.fase-ni[data-fase="'+v+'"]');
+    if(el)el.classList.add('on');
+  }
+  nav('expedientes');
+  renderExpedientes();
+}
 
 // -- MODALS --
 function openModal(id){
@@ -2044,82 +2114,4 @@ function togglePagoFase(expId, fase){
   e.pagos[fase]=!e.pagos[fase];
   save();
   const t=document.getElementById('det-eco');
-  if(t&&t.style.display!=='none')t.innerHTML=renderEcoTab(e);
-}
-
-// -- BORRAR EXPEDIENTE --
-function borrarExpediente(id){
-  const e = DB.expedientes.find(x=>x.id===id);
-  if(!e) return;
-  // Primera confirmación
-  if(!confirm('¿Borrar el expediente "'+e.ref+'"?\n\nEsta acción no se puede deshacer.')) return;
-  // Segunda confirmación
-  if(!confirm('⚠️ SEGUNDA CONFIRMACIÓN\n\n¿Seguro que quieres borrar "'+e.ref+'"?\nSe eliminarán todos sus datos, fases y honorarios.')) return;
-  DB.expedientes = DB.expedientes.filter(x=>x.id!==id);
-  selId = null;
-  document.getElementById('det-container').innerHTML='';
-  // Guardar inmediatamente en local Y en la nube sin debounce
-  DB.lastModified = Date.now();
-  try{localStorage.setItem('archidesk_data',JSON.stringify(DB));}catch(e){}
-  saveToCloud();
-  render();
-}
-
-// -- INIT --
-(async function(){
-  // Populate tipo filter dropdown on load
-  const filtro = document.getElementById('filtro-tipo');
-  filtro.innerHTML = '<option value="">Todos los tipos</option>';
-  Object.entries(TIPOS_CONFIG).forEach(([k,v]) => {
-    filtro.innerHTML += `<option value="${k}">${k} — ${v.desc}</option>`;
-  });
-
-  document.getElementById('sync-status').textContent='☁️ Cargando datos...';
-  document.getElementById('sync-status').style.color='var(--amber)';
-  await loadFromCloud();
-  render();
-})();
-setInterval(()=>{if(curView==='expedientes')renderExpedientes();},60000);
-setInterval(saveToCloud,5*60*1000); // auto-save every 5 min
-</script>
-
-<!-- MODAL EDITAR HONORARIOS -->
-<div class="overlay" id="overlay-editeco" onclick="if(event.target===this)this.classList.remove('on')">
-<div class="modal modal-sm">
-  <div class="modal-title">Editar <span>honorarios</span></div>
-  <input type="hidden" id="ee-id">
-  <div class="fg"><label>Honorarios pactados (€)</label><input type="number" id="ee-honorarios" placeholder="0"></div>
-  <div class="fg"><label>Coste visado (€)</label><input type="number" id="ee-visado" placeholder="0"></div>
-  <div class="modal-actions">
-    <button class="btn-cancel" onclick="document.getElementById('overlay-editeco').classList.remove('on')">Cancelar</button>
-    <button class="btn-save" onclick="guardarEditEco()">Guardar</button>
-  </div>
-</div>
-</div>
-
-<!-- MODAL NUEVO CONTRATO -->
-<div class="overlay" id="overlay-nuevo-contrato" onclick="if(event.target===this)this.classList.remove('on')">
-<div class="modal" style="width:580px;max-height:85vh">
-  <div class="modal-title">Nuevo <span>contrato</span> — <span id="nc-nombre"></span></div>
-  <input type="hidden" id="nc-collab-id">
-  <div class="fg">
-    <label>Fecha desde la que aplica</label>
-    <input type="date" id="nc-fecha">
-    <div style="font-size:11px;color:var(--amber);margin-top:4px;background:var(--amber-light);padding:6px 10px;border-radius:6px">⚠️ Se actualizarán automáticamente todos los expedientes adjudicados desde esta fecha</div>
-  </div>
-  <div class="fg">
-    <label>Importes fijos por tipo de proyecto</label>
-    <div id="nc-fijos-body" style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px"></div>
-  </div>
-  <div class="fg">
-    <label>Notas del contrato</label>
-    <input id="nc-notas" placeholder="Ej: Subida de tarifas acordada en reunión de mayo">
-  </div>
-  <div class="modal-actions">
-    <button class="btn-cancel" onclick="document.getElementById('overlay-nuevo-contrato').classList.remove('on')">Cancelar</button>
-    <button class="btn-save" onclick="guardarNuevoContrato()">Guardar contrato</button>
-  </div>
-</div>
-</div>
-</body>
-</html>
+  if(t&&t.style.display!=='none')t.innerHTML=renderEcoTab(
