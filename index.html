@@ -240,12 +240,12 @@ textarea{resize:vertical;min-height:70px}
         En progreso <span class="ni-badge" id="badge-prog">0</span>
       </div>
       <div class="ni" onclick="filtrarFase('__pendiente__')">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 2v4l3 3" stroke-linecap="round"/><circle cx="8" cy="8" r="6.5"/><path d="M5 8h6" stroke-linecap="round" stroke-dasharray="1.5 2"/></svg>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.5"/><path d="M5 8h6M8 5v6" stroke-linecap="round" stroke-dasharray="2 2"/></svg>
         Pendientes inicio <span class="ni-badge" id="badge-pend">0</span>
       </div>
+      <div class="sb-sec">Por fase</div>
+      <div id="sb-fases"></div>
     </div>
-    <div class="sb-sec">Por fase</div>
-    <div id="sb-fases" style="padding:0 8px"></div>
     <div style="padding:8px">
       <div class="ni" onclick="nav('configuracion',this)">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke-linecap="round"/></svg>
@@ -272,7 +272,7 @@ textarea{resize:vertical;min-height:70px}
         </select>
         <select class="filter-sel" onchange="filtrarFase(this.value)" id="filtro-fase">
           <option value="">Todas las fases</option>
-          <option value="__pendiente__">⏳ Pendientes de inicio</option>
+          <option value="__pendiente__">⏳ Pendientes inicio</option>
         </select>
       </div>
     </div>
@@ -469,7 +469,7 @@ const TIPOS_CONFIG = {
   REH:{desc:'Rehabilitación',                   fases:['LEVANTAMIENTO','PROPUESTA','PLANOS','MEDICIONES','MEMORIA','VISADO','ENTREGA']},
   NAV:{desc:'Nave',                             fases:['LEVANTAMIENTO','PROPUESTA','PLANOS','MEDICIONES','MEMORIA','VISADO','ENTREGA']},
   MAC:{desc:'Memoria de actividad',             fases:['LEVANTAMIENTO','PROPUESTA','PLANOS','MEDICIONES','MEMORIA','VISADO','ENTREGA']},
-  CUV:{desc:'Cubierta visada',                  fases:['LEVANTAMIENTO','PLANOS','MEDICIONES','MEMORIA','VISADO','ENTREGA']},
+  CUV:{desc:'Cubierta visada',                  fases:['LEVANTAMIENTO','PROPUESTA','PLANOS','MEDICIONES','MEMORIA','VISADO','ENTREGA']},
   // 6 FASES: LEV → PROPUESTA → PLANOS → MEM+MED → VISADO → ENTREGA
   LEG:{desc:'Legalización',                     fases:['LEVANTAMIENTO','PROPUESTA','PLANOS','MEMORIA Y MEDICIONES','VISADO','ENTREGA']},
   // 5 FASES: LEV → PLANOS → MEDICIONES → MEMORIA → ENTREGA
@@ -725,34 +725,36 @@ function updateBadges(){
   const badgePend=document.getElementById('badge-pend');
   if(badgePend) badgePend.textContent=pendientes;
 
-  // Sidebar fases
+  // Sidebar fases dinámicas
   const faseCounts={};
   DB.expedientes.forEach(e=>{
     const fa=faseActual(e);
-    if(fa){faseCounts[fa]=(faseCounts[fa]||0)+1;}
+    if(fa) faseCounts[fa]=(faseCounts[fa]||0)+1;
   });
   const sbFases=document.getElementById('sb-fases');
   if(sbFases){
     const fasesOrden=['LEVANTAMIENTO','PROPUESTA','PLANOS','MEDICIONES','MEMORIA','MEMORIA Y MEDICIONES','VISADO','ENTREGA','REGISTRO','ESCANEO','PROCESADO'];
     const toShow=[...new Set([...fasesOrden.filter(f=>faseCounts[f]),...Object.keys(faseCounts)])];
     sbFases.innerHTML=toShow.map(f=>`
-      <div class="ni fase-ni${faseQ===f?' on':''}" data-fase="${f}" onclick="filtrarFase('${f}')">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="2"/><path d="M8 2v2M8 12v2M2 8h2M12 8h2" stroke-linecap="round"/></svg>
-        <span style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f}</span>
+      <div class="ni fase-ni${faseQ===f?' on':''}" data-fase="${f}" onclick="filtrarFase('${f}')" style="padding:7px 12px">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="6" r="2"/></svg>
+        <span style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">${f}</span>
         <span class="ni-badge">${faseCounts[f]}</span>
-      </div>`).join('')+
-      (Object.keys(faseCounts).length?`<div class="ni" style="font-size:11px;color:rgba(255,255,255,.5)" onclick="filtrarFase('')">✕ Quitar filtro fase</div>`:'');
+      </div>`).join('');
+    if(faseQ && faseQ!=='__pendiente__'){
+      sbFases.innerHTML+=`<div class="ni" style="font-size:11px;opacity:.7" onclick="filtrarFase('')">✕ Quitar filtro</div>`;
+    }
   }
 
-  // Update fase filter dropdown
+  // Update fase dropdown options
   const filtroFase=document.getElementById('filtro-fase');
   if(filtroFase){
-    const current=filtroFase.value;
-    filtroFase.innerHTML='<option value="">Todas las fases</option><option value="__pendiente__">⏳ Pendientes de inicio</option>';
+    const cur=filtroFase.value;
+    filtroFase.innerHTML='<option value="">Todas las fases</option><option value="__pendiente__">⏳ Pendientes inicio</option>';
     const fasesOrden=['LEVANTAMIENTO','PROPUESTA','PLANOS','MEDICIONES','MEMORIA','MEMORIA Y MEDICIONES','VISADO','ENTREGA','REGISTRO','ESCANEO','PROCESADO'];
     const toShow=[...new Set([...fasesOrden.filter(f=>faseCounts[f]),...Object.keys(faseCounts)])];
     toShow.forEach(f=>{filtroFase.innerHTML+=`<option value="${f}">${f} (${faseCounts[f]})</option>`;});
-    filtroFase.value=current;
+    if(toShow.includes(cur)||cur==='__pendiente__') filtroFase.value=cur;
   }
 }
 
@@ -763,7 +765,6 @@ function filtered(){
   }).filter(e=>{
     if(!faseQ) return true;
     if(faseQ==='__pendiente__'){
-      // Adjudicado pero ninguna fase completada
       if(!e.fechaAdjudicacion) return false;
       const fs=fasesDeExp(e);
       if(!fs) return !e.fechaFaseUnica;
@@ -1526,13 +1527,19 @@ function buscar(v){searchQ=v;if(curView==='expedientes')renderExpedientes();}
 function filtrarTipo(v){tipoQ=v;if(curView==='expedientes')renderExpedientes();}
 function filtrarFase(v){
   faseQ=v;
-  // Sync sidebar selection
+  // Update sidebar highlights
   document.querySelectorAll('.fase-ni').forEach(el=>el.classList.remove('on'));
-  if(v){
-    const el=document.querySelector('.fase-ni[data-fase="'+v+'"]');
-    if(el)el.classList.add('on');
+  if(v){const el=document.querySelector('.fase-ni[data-fase="'+v+'"]');if(el)el.classList.add('on');}
+  // Update dropdown
+  const sel=document.getElementById('filtro-fase');if(sel)sel.value=v;
+  // Switch to expedientes and refresh
+  if(curView!=='expedientes'){
+    document.querySelectorAll('.ni').forEach(x=>x.classList.remove('on'));
+    document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));
+    document.getElementById('view-expedientes').classList.add('on');
+    curView='expedientes';
+    document.getElementById('tb-title').textContent='EXPEDIENTES';
   }
-  nav('expedientes');
   renderExpedientes();
 }
 
@@ -2105,13 +2112,4 @@ function togglePago(expId, collab){
   if(!e.pagos)e.pagos={};
   e.pagos[collab]=!e.pagos[collab];
   save();
-  const t=document.getElementById('det-eco');
-  if(t&&t.style.display!=='none')t.innerHTML=renderEcoTab(e);
-}
-function togglePagoFase(expId, fase){
-  const e=DB.expedientes.find(x=>x.id===expId); if(!e)return;
-  if(!e.pagos)e.pagos={};
-  e.pagos[fase]=!e.pagos[fase];
-  save();
-  const t=document.getElementById('det-eco');
-  if(t&&t.style.display!=='none')t.innerHTML=renderEcoTab(
+  co
